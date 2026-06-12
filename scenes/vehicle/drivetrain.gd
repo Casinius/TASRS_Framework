@@ -25,7 +25,7 @@ enum DRIVE_TYPE{
 
 var selected_gear := 0
 var _diff_clutch := Clutch.new() 
-var _engine_inertia := 0.0
+var _engine_inertia := 0.20
 var _diff_split := 0.5
 var last_shift_time := 0
 
@@ -234,4 +234,3 @@ func drivetrain(torque: float, rear_brake_torque: float, front_brake_torque: flo
 				
 				differential(rear_drive, rear_brake_torque, rear_wheels, drivetrain_params.rear_diff, delta)
 				differential(front_drive, front_brake_torque, front_wheels, drivetrain_params.front_diff, delta)
-

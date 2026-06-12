@@ -44,6 +44,7 @@ var spring_curr_length: float = spring_length
 @onready var car = $'..' #Get the parent node as car
 @onready var wheelmesh = $MeshInstance3D
 
+var max_extension_force:float=spring_stiffness * spring_length * 1000;
 
 func _ready() -> void:
 	wheel_inertia = 0.5 * wheel_mass * pow(tire_radius, 2)
@@ -74,11 +75,13 @@ func _process(delta: float) -> void:
 
 func _physics_process(delta: float) -> void:
 	var spin_treshold := 10.0
+	var ambient_temp := 20.0
 	if abs(spin) > spin_treshold or abs(z_vel) > 1.0:
 		tire_wear = tire_model.update_tire_wear(delta, slip_vec, y_force, surface_mu)
+	if is_colliding() && y_force>0:
+		tire_model.update_tire_temp(slip_vec, y_force, local_vel.length(), surface_mu, ambient_temp, delta)
 	
-	var ambient_temp := 20.0
-	tire_model.update_tire_temp(slip_vec, y_force, local_vel.length(), surface_mu, ambient_temp, delta)
+	
 
 
 # 在类顶部添加（替换原来的 mm 版本）
@@ -136,7 +139,7 @@ func apply_forces(opposite_comp, delta):
 		spring_load_newton += spring_speed_mm_per_seconds * rebound # rebound
 	
 	y_force = spring_load_newton
-	y_force = max(0, y_force)
+	y_force = clamp(y_force, -max_extension_force, max_extension_force);
 	
 	############### Slip #######################
 	slip_vec.x = asin(clamp(-planar_vect.x, -1, 1)) # X slip is lateral slip
@@ -156,10 +159,14 @@ func apply_forces(opposite_comp, delta):
 		var contact = get_collision_point() - car.global_transform.origin
 		var normal = get_collision_normal()
 		
+		
+		rolling_resistance = rol_res_surface_mul * y_force
+		
 		car.apply_force(normal * y_force, contact)
 		car.apply_force(global_transform.basis.x * force_vec.x, contact)
 		car.apply_force(global_transform.basis.z * force_vec.y, contact)
-		
+		if force_vec.z != 0:
+			car.apply_torque(Vector3(0, force_vec.z * 0.5, 0))
 		return spring_load_mm
 	else:
 		spin -= sign(spin) * delta * 2 / wheel_inertia # stop undriven wheels from spinning endlessly

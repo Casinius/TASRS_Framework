@@ -17,8 +17,16 @@ func update_tire_forces(slip: Vector2, normal_load: float, surface_mu: float = 1
 	
 	var critical_slip = friction / (2 * cornering_stiffness)
 	var critical_length = 0
+	
+	
 	if slip.x:
 		critical_length = friction / (stiffness * contact_patch * tan(abs(slip.x)))
+	
+	var abs_slip_x = abs(slip.x)
+	if abs_slip_x < 0.001:
+		critical_length = contact_patch * 2   # 强制进入粘着区
+	else:
+		critical_length = friction / (stiffness * contact_patch * tan(abs_slip_x))
 	
 	var force_vector := Vector3.ZERO
 	

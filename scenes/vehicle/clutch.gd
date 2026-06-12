@@ -11,7 +11,9 @@ func get_reaction_torques(av1: float, av2: float, t1: float, t2: float, slip_tor
 	var delta_torque := t1 - t2
 	var delta_av := av1 - av2
 	var reaction_torques := Vector2.ZERO
-	
+	# 如果车轮转速几乎为零且扭矩过大，强制离合器打滑
+	if abs(av1) < 0.5 and abs(av2) < 0.5 and abs(t1 - t2) > slip_torque:
+		locked = false
 	# Locked situations are handled in car and drivetrain scripts atm
 	if locked:
 		if absf(delta_torque) >= slip_torque:
