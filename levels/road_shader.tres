@@ -1,0 +1,100 @@
+[gd_resource type="VisualShader" format=3 uid="uid://4eqr3xfd6bbn"]
+
+[ext_resource type="Texture2D" uid="uid://kcej4esyru8g" path="res://materials/nbr-road2.png" id="1_t1cye"]
+[ext_resource type="Texture2D" uid="uid://blavxm32aav7s" path="res://materials/nbr-road2_d.png" id="2_pougj"]
+[ext_resource type="Texture2D" uid="uid://068f3cepw3x2" path="res://materials/nbr-road2_h.png" id="3_crccr"]
+[ext_resource type="Script" uid="uid://ci2e78dmgc73" path="res://UVManipulation.gd" id="4_cldmi"]
+
+[sub_resource type="VisualShaderNodeInput" id="VisualShaderNodeInput_cldmi"]
+input_name = "inv_view_matrix"
+
+[sub_resource type="VisualShaderNodeInput" id="VisualShaderNodeInput_aat5v"]
+input_name = "uv"
+
+[sub_resource type="VisualShaderNodeExpression" id="VisualShaderNodeExpression_he8o3"]
+size = Vector2(360, 260)
+expression = "output0 = (input0 * vec4(VERTEX, 1.0)).xyz;"
+
+[sub_resource type="VisualShaderNodeRandomRange" id="VisualShaderNodeRandomRange_cldmi"]
+
+[sub_resource type="VisualShaderNodeRandomRange" id="VisualShaderNodeRandomRange_aat5v"]
+default_input_values = [0, Vector3(1, 1, 1), 1, 1.1, 2, 1.2]
+
+[sub_resource type="VisualShaderNodeRandomRange" id="VisualShaderNodeRandomRange_he8o3"]
+
+[sub_resource type="VisualShaderNodeTexture" id="VisualShaderNodeTexture_t1cye"]
+texture = ExtResource("1_t1cye")
+
+[sub_resource type="VisualShaderNodeTexture" id="VisualShaderNodeTexture_crccr"]
+texture = ExtResource("2_pougj")
+
+[sub_resource type="VisualShaderNodeTexture" id="VisualShaderNodeTexture_cldmi"]
+texture = ExtResource("3_crccr")
+
+[sub_resource type="VisualShaderNodeColorFunc" id="VisualShaderNodeColorFunc_cldmi"]
+function = 5
+
+[sub_resource type="VisualShaderNodeVectorFunc" id="VisualShaderNodeVectorFunc_aat5v"]
+
+[sub_resource type="VisualShaderNodeCustom" id="VisualShaderNodeCustom_pdul2"]
+default_input_values = [0, null, 1, 1.0, 2, 1.0, 3, Vector2(0, 0), 4, Vector2(0, 0)]
+initialized = true
+script = ExtResource("4_cldmi")
+
+[sub_resource type="VisualShaderNodeInput" id="VisualShaderNodeInput_t1cye"]
+input_name = "modelview_matrix"
+
+[sub_resource type="VisualShaderNodeInput" id="VisualShaderNodeInput_pougj"]
+input_name = "projection_matrix"
+
+[sub_resource type="VisualShaderNodeTexture" id="VisualShaderNodeTexture_pougj"]
+output_port_for_preview = 0
+texture = ExtResource("3_crccr")
+
+[sub_resource type="VisualShaderNodeColorFunc" id="VisualShaderNodeColorFunc_crccr"]
+function = 4
+
+[resource]
+modes/diffuse = 2
+stencil/reference = 6
+nodes/vertex/0/position = Vector2(440, 120)
+nodes/vertex/2/node = SubResource("VisualShaderNodeInput_t1cye")
+nodes/vertex/2/position = Vector2(0, 580)
+nodes/vertex/3/node = SubResource("VisualShaderNodeInput_pougj")
+nodes/vertex/3/position = Vector2(-60, 580)
+nodes/vertex/5/node = SubResource("VisualShaderNodeTexture_pougj")
+nodes/vertex/5/position = Vector2(-340, 300)
+nodes/vertex/6/node = SubResource("VisualShaderNodeColorFunc_crccr")
+nodes/vertex/6/position = Vector2(20, 420)
+nodes/vertex/connections = PackedInt32Array(2, 0, 0, 10, 3, 0, 0, 11, 5, 0, 6, 0, 6, 0, 0, 6)
+nodes/fragment/0/position = Vector2(480, 160)
+nodes/fragment/2/node = SubResource("VisualShaderNodeTexture_t1cye")
+nodes/fragment/2/position = Vector2(-120, 280)
+nodes/fragment/3/node = SubResource("VisualShaderNodeTexture_crccr")
+nodes/fragment/3/position = Vector2(-100, 620)
+nodes/fragment/4/node = SubResource("VisualShaderNodeTexture_cldmi")
+nodes/fragment/4/position = Vector2(20, 900)
+nodes/fragment/7/node = SubResource("VisualShaderNodeColorFunc_cldmi")
+nodes/fragment/7/position = Vector2(140, 240)
+nodes/fragment/8/node = SubResource("VisualShaderNodeVectorFunc_aat5v")
+nodes/fragment/8/position = Vector2(200, 320)
+nodes/fragment/9/node = SubResource("VisualShaderNodeCustom_pdul2")
+nodes/fragment/9/position = Vector2(-460, 500)
+nodes/fragment/10/node = SubResource("VisualShaderNodeInput_cldmi")
+nodes/fragment/10/position = Vector2(-1780, 380)
+nodes/fragment/11/node = SubResource("VisualShaderNodeInput_aat5v")
+nodes/fragment/11/position = Vector2(-1320, 640)
+nodes/fragment/12/node = SubResource("VisualShaderNodeExpression_he8o3")
+nodes/fragment/12/position = Vector2(-1480, 300)
+nodes/fragment/12/size = Vector2(360, 260)
+nodes/fragment/12/input_ports = "0,7,input0;"
+nodes/fragment/12/output_ports = "0,4,output0;"
+nodes/fragment/12/expression = "output0 = (input0 * vec4(VERTEX, 1.0)).xyz;"
+nodes/fragment/13/node = SubResource("VisualShaderNodeRandomRange_cldmi")
+nodes/fragment/13/position = Vector2(-880, 440)
+nodes/fragment/14/node = SubResource("VisualShaderNodeRandomRange_aat5v")
+nodes/fragment/14/position = Vector2(-880, 780)
+nodes/fragment/15/node = SubResource("VisualShaderNodeRandomRange_he8o3")
+nodes/fragment/15/position = Vector2(-840, 620)
+nodes/fragment/connections = PackedInt32Array(4, 0, 0, 24, 2, 0, 0, 6, 2, 0, 7, 0, 7, 0, 0, 0, 2, 0, 8, 0, 8, 0, 0, 2, 10, 0, 12, 0, 9, 0, 2, 0, 12, 0, 13, 0, 9, 0, 3, 0, 9, 0, 4, 0, 3, 0, 0, 9, 4, 0, 0, 10, 12, 0, 14, 0, 11, 0, 15, 0, 15, 0, 9, 0, 11, 0, 15, 1, 11, 0, 15, 2, 13, 0, 9, 2, 13, 0, 9, 3, 14, 0, 9, 1)
+nodes/light/0/position = Vector2(480, 160)

@@ -1,0 +1,6 @@
+[gd_resource type="Resource" script_class="PacejkaTireModel" format=3 uid="uid://bvyyxjk16xt0y"]
+
+[ext_resource type="Script" uid="uid://bxdmhsny5ddvd" path="res://scenes/vehicle/tire_models/pacejka_tire_model.gd" id="1"]
+
+[resource]
+script = ExtResource("1")

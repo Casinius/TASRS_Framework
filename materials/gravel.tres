@@ -1,0 +1,8 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://x2mf3ioo3ur6"]
+
+[ext_resource type="Texture2D" uid="uid://boygkdmnjp6je" path="res://materials/nbr-curb-r.png" id="1_4o3i2"]
+
+[resource]
+albedo_texture = ExtResource("1_4o3i2")
+albedo_texture_force_srgb = true
+metallic_specular = 0.0

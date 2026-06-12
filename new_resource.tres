@@ -1,0 +1,69 @@
+[gd_resource type="Resource" script_class="CarParameters" format=3 uid="uid://d3r1ek5e23w2p"]
+
+[ext_resource type="Script" uid="uid://beoy7rb7kinu4" path="res://scenes/vehicle/diff_params.gd" id="1_xonew"]
+[ext_resource type="Script" uid="uid://cq401wgg5c803" path="res://scenes/vehicle/drivetrain_params.gd" id="2_y3mkl"]
+[ext_resource type="Script" uid="uid://dssspfnea8d08" path="res://scenes/vehicle/car_params.gd" id="3_ihbpk"]
+[ext_resource type="AudioStream" uid="uid://dp7pftqq14f58" path="res://materials/impreza2002_engine.wav" id="3_y3mkl"]
+[ext_resource type="Script" uid="uid://dbjj4t3ukrgvy" path="res://scenes/vehicle/wheel_params.gd" id="4_g03ti"]
+[ext_resource type="Script" uid="uid://cyyij20ybkg22" path="res://scenes/vehicle/tire_models/brush_tire_model.gd" id="6_y3mkl"]
+
+[sub_resource type="Resource" id="Resource_a4qox"]
+script = ExtResource("1_xonew")
+
+[sub_resource type="Resource" id="Resource_ftdu4"]
+script = ExtResource("1_xonew")
+
+[sub_resource type="Resource" id="Resource_6073w"]
+script = ExtResource("1_xonew")
+diff_type = 1
+
+[sub_resource type="Resource" id="Resource_tq03h"]
+script = ExtResource("2_y3mkl")
+gear_ratios = [3.08, 2.455, 1.66, 1.175, 1.0]
+reverse_ratio = 3.2
+gear_inertia = 0.2
+automatic = false
+rear_diff = SubResource("Resource_6073w")
+front_diff = SubResource("Resource_ftdu4")
+center_diff = SubResource("Resource_a4qox")
+center_split_fr = 0.3
+
+[sub_resource type="Curve" id="Curve_kdwlw"]
+_data = [Vector2(0, 0), 0.0, 2.36316, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="Curve" id="Curve_t8jp4"]
+_data = [Vector2(0, 0.663636), 0.0, 0.0, 0, 0, Vector2(0.4, 0.945454), 0.414404, 0.414404, 0, 0, Vector2(0.6492537, 1), 0.0, 0.0, 0, 0, Vector2(1, 0.76306194), -4.9, 0.0, 0, 0]
+point_count = 4
+
+[sub_resource type="Resource" id="Resource_ihbpk"]
+script = ExtResource("6_y3mkl")
+metadata/_custom_type_script = "uid://cyyij20ybkg22"
+
+[sub_resource type="Resource" id="Resource_1vovn"]
+script = ExtResource("4_g03ti")
+tire_model = SubResource("Resource_ihbpk")
+spring_stiffness = 60.0
+bump = 8.0
+rebound = 9.0
+wheel_mass = 30.0
+anti_roll = 2.0
+
+[resource]
+script = ExtResource("3_ihbpk")
+max_steer = 0.4
+max_brake_force = 100000.0
+max_handbrake_torque = 4000.0
+max_torque = 350.0
+max_engine_rpm = 9000.0
+torque_curve = SubResource("Curve_t8jp4")
+throttle_model = SubResource("Curve_kdwlw")
+engine_brake = 150.0
+engine_moment = 0.14
+engine_sound = ExtResource("3_y3mkl")
+clutch_friction = 320.0
+drivetrain_params = SubResource("Resource_tq03h")
+wheel_params_fl = SubResource("Resource_1vovn")
+wheel_params_fr = SubResource("Resource_1vovn")
+wheel_params_bl = SubResource("Resource_1vovn")
+wheel_params_br = SubResource("Resource_1vovn")

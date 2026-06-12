@@ -1,0 +1,9 @@
+[configuration]
+
+entry_symbol = "libgdsdl_haptic_init"
+compatibility_minimum = "4.2"
+
+
+[libraries]
+
+linux.x86_64 = "res://addons/godot_ffb/libsdl_haptic.so"

@@ -1,0 +1,75 @@
+[gd_scene format=3 uid="uid://exyybiakl0yk"]
+
+[ext_resource type="Script" uid="uid://c8y4l6a7xg0lf" path="res://scenes/vehicle/base_car.gd" id="1_n8n57"]
+[ext_resource type="Script" uid="uid://dcxp356dtbg48" path="res://scenes/camera.gd" id="3_5upga"]
+[ext_resource type="Script" uid="uid://dm7b3t34gjbbj" path="res://scenes/vehicle/wheel_suspension.gd" id="4_6hvcn"]
+[ext_resource type="Material" path="res://materials/tire.tres" id="5_cuc4d"]
+[ext_resource type="PackedScene" uid="uid://c2iprfhaxmdrm" path="res://scenes/vehicle/engine_sound.res" id="5_dnq5i"]
+[ext_resource type="PackedScene" uid="uid://djbt3ltge1aat" path="res://scenes/gui/gui.tscn" id="6_cp0hb"]
+
+[sub_resource type="CylinderMesh" id="10"]
+material = ExtResource("5_cuc4d")
+top_radius = 0.3
+bottom_radius = 0.3
+height = 0.2
+radial_segments = 16
+
+[node name="RigidBodyCar" type="RigidBody3D" unique_id=706344994]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+collision_layer = 2
+mass = 700.0
+script = ExtResource("1_n8n57")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1051552537]
+transform = Transform3D(1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 1.6, 4.4)
+script = ExtResource("3_5upga")
+follow_this_path = NodePath("../CamTarget")
+
+[node name="Wheel_br" type="RayCast3D" parent="." unique_id=341000035]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.8, 0, 1.5)
+script = ExtResource("4_6hvcn")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Wheel_br" unique_id=377170707]
+transform = Transform3D(-4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("10")
+skeleton = NodePath("")
+
+[node name="Wheel_bl" type="RayCast3D" parent="." unique_id=597140851]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.8, 0, 1.5)
+script = ExtResource("4_6hvcn")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Wheel_bl" unique_id=1829944957]
+transform = Transform3D(-4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("10")
+skeleton = NodePath("")
+
+[node name="Wheel_fr" type="RayCast3D" parent="." unique_id=897962318]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.8, 0, -1.4)
+script = ExtResource("4_6hvcn")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Wheel_fr" unique_id=1771657156]
+transform = Transform3D(-4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("10")
+skeleton = NodePath("")
+
+[node name="Wheel_fl" type="RayCast3D" parent="." unique_id=1449319194]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.8, 0, -1.4)
+script = ExtResource("4_6hvcn")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Wheel_fl" unique_id=1464096674]
+transform = Transform3D(-4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("10")
+skeleton = NodePath("")
+
+[node name="EngineSound" parent="." unique_id=1943482002 instance=ExtResource("5_dnq5i")]
+pitch_scale = 0.58
+
+[node name="CamTarget" type="Marker3D" parent="." unique_id=605840275]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.17515, 0)
+
+[node name="Gui" parent="." unique_id=474139917 instance=ExtResource("6_cp0hb")]
+
+[node name="TireInfoApp" parent="Gui" index="1"]
+layout_mode = 0
+
+[editable path="Gui"]

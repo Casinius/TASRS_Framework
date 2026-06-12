@@ -1,0 +1,69 @@
+[gd_resource type="Resource" script_class="CarParameters" format=3 uid="uid://cu4jo10x8b1se"]
+
+[ext_resource type="Script" uid="uid://cq401wgg5c803" path="res://scenes/vehicle/drivetrain_params.gd" id="1_iv3k0"]
+[ext_resource type="AudioStream" path="res://sounds/tres/engine_sample.tres" id="1_wqlgx"]
+[ext_resource type="Script" uid="uid://dssspfnea8d08" path="res://scenes/vehicle/car_params.gd" id="2_8ru0w"]
+[ext_resource type="Script" uid="uid://dbjj4t3ukrgvy" path="res://scenes/vehicle/wheel_params.gd" id="3_scbug"]
+[ext_resource type="Script" uid="uid://bxdmhsny5ddvd" path="res://scenes/vehicle/tire_models/pacejka_tire_model.gd" id="4_ilwyn"]
+
+[sub_resource type="Resource" id="Resource_gehlx"]
+script = ExtResource("1_iv3k0")
+drivetype = 2
+metadata/_custom_type_script = "uid://cq401wgg5c803"
+
+[sub_resource type="Curve" id="Curve_g3qlw"]
+_data = [Vector2(0, 0.463636), 0.0, 0.0, 0, 0, Vector2(0.4, 0.945454), 0.0, 0.0, 0, 0, Vector2(0.646753, 1), 0.0, 0.0, 0, 0, Vector2(1, 0.290909), -4.9, 0.0, 0, 0]
+point_count = 4
+
+[sub_resource type="Resource" id="Resource_uf22r"]
+script = ExtResource("4_ilwyn")
+metadata/_custom_type_script = "uid://bxdmhsny5ddvd"
+
+[sub_resource type="Resource" id="Resource_wl1bc"]
+script = ExtResource("3_scbug")
+tire_model = SubResource("Resource_uf22r")
+spring_stiffness = 55.0
+anti_roll = 50
+
+[sub_resource type="Resource" id="Resource_iv3k0"]
+script = ExtResource("4_ilwyn")
+metadata/_custom_type_script = "uid://bxdmhsny5ddvd"
+
+[sub_resource type="Resource" id="Resource_x3xtx"]
+script = ExtResource("3_scbug")
+tire_model = SubResource("Resource_iv3k0")
+spring_stiffness = 55.0
+anti_roll = 50
+
+[sub_resource type="Resource" id="Resource_5iic0"]
+script = ExtResource("4_ilwyn")
+metadata/_custom_type_script = "uid://bxdmhsny5ddvd"
+
+[sub_resource type="Resource" id="Resource_qk3ry"]
+script = ExtResource("3_scbug")
+tire_model = SubResource("Resource_5iic0")
+spring_stiffness = 55.0
+anti_roll = 50
+
+[sub_resource type="Resource" id="Resource_rpb1i"]
+script = ExtResource("4_ilwyn")
+metadata/_custom_type_script = "uid://bxdmhsny5ddvd"
+
+[sub_resource type="Resource" id="Resource_ofeud"]
+script = ExtResource("3_scbug")
+tire_model = SubResource("Resource_rpb1i")
+spring_stiffness = 55.0
+anti_roll = 50
+
+[resource]
+script = ExtResource("2_8ru0w")
+max_handbrake_torque = 4000.0
+max_torque = 150.0
+torque_curve = SubResource("Curve_g3qlw")
+engine_sound = ExtResource("1_wqlgx")
+clutch_friction = 300.0
+drivetrain_params = SubResource("Resource_gehlx")
+wheel_params_fl = SubResource("Resource_qk3ry")
+wheel_params_fr = SubResource("Resource_ofeud")
+wheel_params_bl = SubResource("Resource_wl1bc")
+wheel_params_br = SubResource("Resource_x3xtx")

@@ -1,0 +1,47 @@
+# Blender 5.0.1 MTL File: 'None'
+# www.blender.org
+
+newmtl ac3dmat1
+Ks 0.500000 0.500000 0.500000
+Ke 0.200000 0.200000 0.200000
+Ni 1.500000
+d 1.000000
+illum 2
+Pr 0.500000
+Pm 0.000000
+Ps 0.000000
+Pc 0.000000
+Pcr 0.030000
+aniso 0.000000
+anisor 0.000000
+map_Kd car2b-trb1.png
+
+newmtl ac3dmat1.001
+Ks 0.500000 0.500000 0.500000
+Ke 0.050000 0.050000 0.050000
+Ni 1.500000
+d 1.000000
+illum 2
+Pr 0.500000
+Pm 0.000000
+Ps 0.000000
+Pc 0.000000
+Pcr 0.030000
+aniso 0.000000
+anisor 0.000000
+map_Kd car2b-trb1-int.png
+
+newmtl ac3dmat1.002
+Ks 0.500000 0.500000 0.500000
+Ke 0.200000 0.200000 0.200000
+Ni 1.500000
+d 1.000000
+illum 2
+Pr 0.500000
+Pm 0.000000
+Ps 0.000000
+Pc 0.000000
+Pcr 0.030000
+aniso 0.000000
+anisor 0.000000
+map_Kd car2b-trb1-int.png
