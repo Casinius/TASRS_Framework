@@ -101,14 +101,11 @@ func sign_of(value:float):
 	else:
 		return -1;
 
-
 func differential(torque: float, brake_torque, wheels, diff: DiffParameters, delta: float):
 	var diff_state = DIFF_STATE.LOCKED
 	
 	var tr1 = wheels[0].get_reaction_torque()
 	var tr2 = wheels[1].get_reaction_torque()
-	#var tr1 = abs(wheels[0].get_reaction_torque())
-	#var tr2 = abs(wheels[1].get_reaction_torque())
 	
 	var delta_torque := 0.0
 	var bias := 0.0
@@ -128,85 +125,62 @@ func differential(torque: float, brake_torque, wheels, diff: DiffParameters, del
 	
 	if diff.diff_type == DIFF_TYPE.OPEN_DIFF:
 		diff_state = DIFF_STATE.OPEN
-	
 	elif diff.diff_type == DIFF_TYPE.LOCKED:
 		diff_state = DIFF_STATE.LOCKED
-	
 	else: # Limited Slip Differential
 		if abs(delta_torque) > diff.diff_preload and bias >= ratio:
 			diff_state = DIFF_STATE.SLIPPING
 	
 	match diff_state:
 		DIFF_STATE.OPEN:
-			var diff_sum := 0.0
-			t2 *= _diff_split
-			t1 *= (1 - _diff_split)
+			var w0 = wheels[0]
+			var w1 = wheels[1]
+			var spin0 = w0.get_spin()
+			var spin1 = w1.get_spin()
 			
-			diff_sum += wheels[0].apply_torque(t1, brake_torque * 0.5, drive_inertia, delta)
-			diff_sum -= wheels[1].apply_torque(t2, brake_torque * 0.5, drive_inertia, delta)
-			_diff_split = 0.5 * (clamp(diff_sum, -1.0, 1.0) + 1.0)
+			var spin_diff :float= spin0 - spin1
+			var diff_stiffness := 0.1
+			var base_t := torque * 0.5
+			var correction := diff_stiffness * spin_diff * drive_inertia / delta
+			correction = clampf(correction, -abs(torque) * 0.3, abs(torque) * 0.3)
+			
+			var tx0 :float= base_t - correction
+			var tx1 :float= base_t + correction
+			
+			# 正确：只传4个参数
+			w0.apply_torque(tx0, brake_torque * 0.5, drive_inertia, delta)
+			w1.apply_torque(tx1, brake_torque * 0.5, drive_inertia, delta)
+			
+			var target_split := 0.5
+			if abs(spin_diff) > 0.1:
+				target_split = 0.5 - 0.1 * sign(spin_diff)
+			_diff_split = lerp(_diff_split, target_split, 0.1)
 		
 		DIFF_STATE.SLIPPING:
 			_diff_clutch.friction = diff.diff_preload
 			var diff_torques = _diff_clutch.get_reaction_torques(wheels[0].get_spin(), wheels[1].get_spin(), tr1, tr2, diff.diff_preload * ratio, 0.0)
 			t1 += diff_torques.x
 			t2 += diff_torques.y
-			
+			# 正确：只传4个参数
 			wheels[0].apply_torque(t1, brake_torque * 0.5, drive_inertia, delta)
 			wheels[1].apply_torque(t2, brake_torque * 0.5, drive_inertia, delta)
-			
+		
 		DIFF_STATE.LOCKED:
-			# 【修复】锁定差速器：两轮强制同速，但分别计算受力
-			var avg_spin = (wheels[0].get_spin() + wheels[1].get_spin()) * 0.5
-			var combined_inertia = wheels[0].wheel_inertia + wheels[1].wheel_inertia + drive_inertia * 2.0
+			var w0 = wheels[0]
+			var w1 = wheels[1]
+			var spin0 = w0.get_spin()
+			var spin1 = w1.get_spin()
+			var diff_speed = spin0 - spin1
 			
-			# 总路面反力
-			var total_road_torque = tr1 + tr2
-			# 总输入扭矩
-			var total_input_torque = torque
-			# 总刹车扭矩
-			var total_brake = brake_torque
-			# 总滚动阻力
-			var total_rolling_res = wheels[0].rolling_resistance + wheels[1].rolling_resistance
+			var axial_lock_stiffness := 200.0
+			var correction = clamp(diff_speed * axial_lock_stiffness, -1500.0, 1500.0)
 			
-			# 净扭矩（注意符号：输入扭矩推车轮，路面反力阻车轮）
-			var net_torque = total_input_torque - total_road_torque
+			var tx0 :float= torque * 0.5 - correction
+			var tx1 :float= torque * 0.5 + correction
 			
-			# 判断是否静止
-			if abs(avg_spin) < 5.0 and total_brake > abs(net_torque):
-				avg_spin = 0.0
-			else:
-				# 刹车和滚动阻力总是阻碍运动
-				var resist_torque = (total_brake + total_rolling_res) * sign(avg_spin)
-				net_torque -= resist_torque
-				avg_spin += delta * net_torque / combined_inertia
-			
-			# 强制两轮同速
-			wheels[0].set_spin(avg_spin)
-			wheels[1].set_spin(avg_spin)
-			
-			# 【关键】分别计算每轮的扭矩分配（用于反作用力传递）
-			# 锁定状态下，扭矩按反力比例分配，或简单平分
-			var torque_per_wheel = torque * 0.5
-			wheels[0].apply_torque(torque_per_wheel, brake_torque * 0.5, drive_inertia, delta)
-			wheels[1].apply_torque(torque_per_wheel, brake_torque * 0.5, drive_inertia, delta)
-			
-			#var net_torque = wheels[0].get_reaction_torque() + wheels[1].get_reaction_torque()
-			#net_torque += t1 + t2
-			
-			#var spin := 0.0
-			#var avg_spin = (wheels[0].get_spin() + wheels[1].get_spin()) * 0.5
-			#var rolling_resistance = wheels[0].rolling_resistance + wheels[1].rolling_resistance
-			
-			#if abs(avg_spin) < 5.0 and brake_torque > abs(net_torque):
-			#	spin = 0.0
-			#else:
-			#	net_torque -= (brake_torque + rolling_resistance) * sign(avg_spin)
-			
-			#spin = avg_spin + delta * net_torque / (wheels[0].wheel_inertia + drive_inertia + wheels[1].wheel_inertia)
-			#wheels[0].set_spin(spin)
-			#wheels[1].set_spin(spin)
-
+			# 正确：只传4个参数（没有多余的 true/false）
+			w0.apply_torque(tx0, brake_torque * 0.5, drive_inertia, delta)
+			w1.apply_torque(tx1, brake_torque * 0.5, drive_inertia, delta)
 
 func drivetrain(torque: float, rear_brake_torque: float, front_brake_torque: float, wheels: Array, clutch_input: float, delta: float):
 	var rear_wheels = [wheels[0], wheels[1]]

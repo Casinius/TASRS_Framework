@@ -256,11 +256,11 @@ func engage(delta):
 		engine_angular_vel, gearbox_shaft_speed, torque_out, tr, clutch_slip_torque, clutch_kick
 	)
 	
-	if clutch.locked:
+	#if clutch.locked:
 		# 引擎侧反力 = -输入扭矩（引擎被加载）
-		reaction_torques.x = torque_out
+	#	reaction_torques.x = torque_out
 		# 变速箱侧扭矩 = 输入扭矩（传递动力）
-		reaction_torques.y = -torque_out
+	#	reaction_torques.y = -torque_out
 	
 	
 	

@@ -9,7 +9,6 @@
 
 [sub_resource type="Resource" id="Resource_a4qox"]
 script = ExtResource("1_xonew")
-diff_type = 1
 
 [sub_resource type="Resource" id="Resource_ftdu4"]
 script = ExtResource("1_xonew")
@@ -37,14 +36,13 @@ point_count = 2
 _data = [Vector2(0, 0.663636), 0.0, 0.0, 0, 0, Vector2(0.4, 0.945454), 0.414404, 0.414404, 0, 0, Vector2(0.6492537, 1), 0.0, 0.0, 0, 0, Vector2(0.9908815, 0.19733655), -7.951877, 0.0, 0, 0]
 point_count = 4
 
-[sub_resource type="Resource" id="Resource_ihbpk"]
+[sub_resource type="Resource" id="Resource_y3mkl"]
 script = ExtResource("6_y3mkl")
-tire_stiffness = 0.23
 metadata/_custom_type_script = "uid://cyyij20ybkg22"
 
 [sub_resource type="Resource" id="Resource_1vovn"]
 script = ExtResource("4_g03ti")
-tire_model = SubResource("Resource_ihbpk")
+tire_model = SubResource("Resource_y3mkl")
 spring_stiffness = 60.0
 bump = 8.0
 rebound = 12.0

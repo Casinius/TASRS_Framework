@@ -44,7 +44,7 @@ var spring_curr_length: float = spring_length
 @onready var car = $'..' #Get the parent node as car
 @onready var wheelmesh = $MeshInstance3D
 
-var max_extension_force:float=spring_stiffness * spring_length * 1000;
+var max_extension_force:float=spring_stiffness * (spring_length * 1000);
 
 func _ready() -> void:
 	wheel_inertia = 0.5 * wheel_mass * pow(tire_radius, 2)
@@ -139,7 +139,7 @@ func apply_forces(opposite_comp, delta):
 		spring_load_newton += spring_speed_mm_per_seconds * rebound # rebound
 	
 	y_force = spring_load_newton
-	y_force = clamp(y_force, -max_extension_force, max_extension_force);
+	y_force = clamp(y_force, 0, max_extension_force);
 	
 	############### Slip #######################
 	slip_vec.x = asin(clamp(-planar_vect.x, -1, 1)) # X slip is lateral slip
@@ -203,3 +203,4 @@ func get_reaction_torque():
 
 func steer(input, max_steer):
 	rotation.y = max_steer * (input + (1 - cos(input * 0.5 * PI)) * ackermann)
+	rotation.y = clamp(rotation.y,-max_steer,max_steer);

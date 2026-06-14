@@ -1,43 +1,73 @@
 class_name PacejkaTireModel
 extends BaseTireModel
 
-@export var pacejka_b := 10.0
+# 侧向（Lateral）参数
+@export var pacejka_b_lat := 10.0
 @export var pacejka_c_lat := 1.35
+@export var pacejka_d_lat := 1.0
+@export var pacejka_e_lat := 0.0
+
+# 纵向（Longitudinal）参数
+@export var pacejka_b_long := 10.0
 @export var pacejka_c_long := 1.65
-@export var pacejka_d := 1.0
-@export var pacejka_e := 0.0
+@export var pacejka_d_long := 1.0
+@export var pacejka_e_long := 0.0
+
+# 回正力矩参数（简化）
+@export var aligning_moment_factor := 0.05   # 回正力矩系数
 
 
-func pacejka(slip, B, C, D, E, normal_load):
-	return normal_load * D * sin(C * atan(B * slip - E * (B * slip - atan(B * slip))))
+# 纯侧偏力公式（Pacejka 89/96）
+func pacejka_lat(slip_angle: float, normal_load: float) -> float:
+	var B = pacejka_b_lat
+	var C = pacejka_c_lat
+	var D = pacejka_d_lat * normal_load
+	var E = pacejka_e_lat
+	var arg = B * slip_angle
+	return D * sin(C * atan(arg - E * (arg - atan(arg))))
 
 
-func update_tire_forces(slip: Vector2, normal_load: float, surface_mu: float):
+# 纯纵滑力公式
+func pacejka_long(slip_ratio: float, normal_load: float) -> float:
+	var B = pacejka_b_long
+	var C = pacejka_c_long
+	var D = pacejka_d_long * normal_load
+	var E = pacejka_e_long
+	var arg = B * slip_ratio
+	return D * sin(C * atan(arg - E * (arg - atan(arg))))
+
+
+func update_tire_forces(slip: Vector2, normal_load: float, surface_mu: float = 1.0) -> Vector3:
+	# 1. 温度、磨损、载荷灵敏度修正
 	var temp_mu := TIRE_TEMP_MU.sample_baked(tire_temp / max_tire_temp)
 	var wear_mu := TIRE_WEAR_CURVE.sample_baked(tire_wear)
 	load_sensitivity = update_load_sensitivity(normal_load)
-	var mu := surface_mu * load_sensitivity * wear_mu * temp_mu
-	
-	var peak_sa := pacejka_b / 20.0 * 0.5
-	var peak_sr := peak_sa * 0.7
-	
-	var normalised_sr = slip.y / peak_sr
-	var normalised_sa = slip.x / peak_sa
-	var resultant_slip = sqrt(pow(normalised_sr, 2) + pow(normalised_sa, 2))
-#
-	var sr_modified = resultant_slip * peak_sr
-	var sa_modified = resultant_slip * peak_sa
-	
-	var force_vec := Vector3.ZERO
-	
-	force_vec.x = pacejka(abs(sa_modified), pacejka_b, pacejka_c_lat, pacejka_d, pacejka_e, normal_load) * sign(slip.x)
+	var mu = surface_mu * load_sensitivity * wear_mu * temp_mu
 
-	force_vec.y = pacejka(abs(sr_modified), pacejka_b, pacejka_c_long, pacejka_d, pacejka_e, normal_load) * sign(slip.y)
-	force_vec.z = pacejka(slip.x, pacejka_b, 2.0, 0.1 * pacejka_e, -20, normal_load) # 
+	# 2. 输入滑移：slip.x = 侧偏角（弧度），slip.y = 纵向滑移率
+	var slip_angle = slip.x
+	var slip_ratio = slip.y
+
+	# 3. 计算纯侧偏力和纯纵滑力（未修正组合滑移）
+	var fy0 = pacejka_lat(slip_angle, normal_load)
+	var fx0 = pacejka_long(slip_ratio, normal_load)
+
+	# 4. 组合滑移下的摩擦圆缩放（最稳健、不易震荡）
+	var combined_force = sqrt(fx0 * fx0 + fy0 * fy0)
+	var max_force = mu * normal_load
 	
-	force_vec *= mu
-	
-	if resultant_slip != 0:
-		force_vec.x = force_vec.x * abs(normalised_sa / resultant_slip)
-		force_vec.y = force_vec.y * abs(normalised_sr / resultant_slip)
-	return force_vec
+	var fx = fx0
+	var fy = fy0
+	if combined_force > max_force and combined_force > 0.001:
+		var scale = max_force / combined_force
+		fx *= scale
+		fy *= scale
+
+	# 5. 回正力矩（简化模型，正比于侧向力，并随滑移角饱和）
+	var aligning_moment = -fy * slip_angle * aligning_moment_factor
+	# 限制最大回正力矩，防止失控
+	aligning_moment = clamp(aligning_moment, -max_force * 0.05, max_force * 0.05)
+
+	# 6. 返回 Vector3(x=侧向力, y=纵向力, z=回正力矩)
+	#    注意：原代码中 force_vec.x 是侧向力（用于转向），force_vec.y 是纵向力（驱动/制动）
+	return Vector3(fy, fx, aligning_moment)
