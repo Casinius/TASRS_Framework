@@ -43,8 +43,13 @@ func update_tire_forces(slip: Vector2, normal_load: float, surface_mu: float = 1
 		return Vector3.ZERO
 
 	if deflect <= 0.5 * friction * (1 - slip.y):
-		force_vector.y = cornering_stiffness * -slip.y / (1 - slip.y)
-		force_vector.x = cornering_stiffness * tan(slip.x) / (1 - slip.y)
+		if (1-slip.y)!=0:
+			#y -> z
+			force_vector.z = cornering_stiffness * -slip.y / (1 - slip.y)
+			force_vector.x = cornering_stiffness * tan(slip.x) / (1 - slip.y)
+		else:#防止除以0
+			force_vector.y = cornering_stiffness * -slip.y
+			force_vector.x = cornering_stiffness * tan(slip.x)
 	else:
 		var brushy = (1 - friction * (1 - slip.y) / (4 * deflect)) / deflect
 		force_vector.y = friction * cornering_stiffness * slip.y * brushy

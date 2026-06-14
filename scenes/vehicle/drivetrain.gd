@@ -95,19 +95,28 @@ func get_gearing() -> float:
 func set_input_inertia(value):
 	_engine_inertia =  value
 
+func sign_of(value:float):
+	if value >= 0:
+		return 1;
+	else:
+		return -1;
+
 
 func differential(torque: float, brake_torque, wheels, diff: DiffParameters, delta: float):
 	var diff_state = DIFF_STATE.LOCKED
-	var tr1 = abs(wheels[0].get_reaction_torque())
-	var tr2 = abs(wheels[1].get_reaction_torque())
+	
+	var tr1 = wheels[0].get_reaction_torque()
+	var tr2 = wheels[1].get_reaction_torque()
+	#var tr1 = abs(wheels[0].get_reaction_torque())
+	#var tr2 = abs(wheels[1].get_reaction_torque())
 	
 	var delta_torque := 0.0
 	var bias := 0.0
 	
 	if tr1 >= tr2:
-		bias = tr1 / tr2
+		bias = tr1 / max(tr2,0.001)
 	else:
-		bias = tr2 / tr1
+		bias = tr2 / max(tr1,0.001)
 	
 	delta_torque = tr1 - tr2
 	var t1 := torque * 0.5
@@ -147,21 +156,56 @@ func differential(torque: float, brake_torque, wheels, diff: DiffParameters, del
 			wheels[1].apply_torque(t2, brake_torque * 0.5, drive_inertia, delta)
 			
 		DIFF_STATE.LOCKED:
-			var net_torque = wheels[0].get_reaction_torque() + wheels[1].get_reaction_torque()
-			net_torque += t1 + t2
-			
-			var spin := 0.0
+			# 【修复】锁定差速器：两轮强制同速，但分别计算受力
 			var avg_spin = (wheels[0].get_spin() + wheels[1].get_spin()) * 0.5
-			var rolling_resistance = wheels[0].rolling_resistance + wheels[1].rolling_resistance
+			var combined_inertia = wheels[0].wheel_inertia + wheels[1].wheel_inertia + drive_inertia * 2.0
 			
-			if abs(avg_spin) < 5.0 and brake_torque > abs(net_torque):
-				spin = 0.0
+			# 总路面反力
+			var total_road_torque = tr1 + tr2
+			# 总输入扭矩
+			var total_input_torque = torque
+			# 总刹车扭矩
+			var total_brake = brake_torque
+			# 总滚动阻力
+			var total_rolling_res = wheels[0].rolling_resistance + wheels[1].rolling_resistance
+			
+			# 净扭矩（注意符号：输入扭矩推车轮，路面反力阻车轮）
+			var net_torque = total_input_torque - total_road_torque
+			
+			# 判断是否静止
+			if abs(avg_spin) < 5.0 and total_brake > abs(net_torque):
+				avg_spin = 0.0
 			else:
-				net_torque -= (brake_torque + rolling_resistance) * sign(avg_spin)
+				# 刹车和滚动阻力总是阻碍运动
+				var resist_torque = (total_brake + total_rolling_res) * sign(avg_spin)
+				net_torque -= resist_torque
+				avg_spin += delta * net_torque / combined_inertia
 			
-			spin = avg_spin + delta * net_torque / (wheels[0].wheel_inertia + drive_inertia + wheels[1].wheel_inertia)
-			wheels[0].set_spin(spin)
-			wheels[1].set_spin(spin)
+			# 强制两轮同速
+			wheels[0].set_spin(avg_spin)
+			wheels[1].set_spin(avg_spin)
+			
+			# 【关键】分别计算每轮的扭矩分配（用于反作用力传递）
+			# 锁定状态下，扭矩按反力比例分配，或简单平分
+			var torque_per_wheel = torque * 0.5
+			wheels[0].apply_torque(torque_per_wheel, brake_torque * 0.5, drive_inertia, delta)
+			wheels[1].apply_torque(torque_per_wheel, brake_torque * 0.5, drive_inertia, delta)
+			
+			#var net_torque = wheels[0].get_reaction_torque() + wheels[1].get_reaction_torque()
+			#net_torque += t1 + t2
+			
+			#var spin := 0.0
+			#var avg_spin = (wheels[0].get_spin() + wheels[1].get_spin()) * 0.5
+			#var rolling_resistance = wheels[0].rolling_resistance + wheels[1].rolling_resistance
+			
+			#if abs(avg_spin) < 5.0 and brake_torque > abs(net_torque):
+			#	spin = 0.0
+			#else:
+			#	net_torque -= (brake_torque + rolling_resistance) * sign(avg_spin)
+			
+			#spin = avg_spin + delta * net_torque / (wheels[0].wheel_inertia + drive_inertia + wheels[1].wheel_inertia)
+			#wheels[0].set_spin(spin)
+			#wheels[1].set_spin(spin)
 
 
 func drivetrain(torque: float, rear_brake_torque: float, front_brake_torque: float, wheels: Array, clutch_input: float, delta: float):

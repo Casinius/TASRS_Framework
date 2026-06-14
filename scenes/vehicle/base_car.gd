@@ -121,8 +121,9 @@ func _physics_process(delta):
 	##### Engine loop #####
 	torque_out = get_engine_torque(rpm, throttle_input)
 	engine_net_torque = torque_out + clutch_reaction_torque
-	
+
 	rpm += AV_2_RPM * delta * engine_net_torque / car_params.engine_moment
+	
 	engine_angular_vel = rpm / AV_2_RPM
 	
 	if rpm >= car_params.max_engine_rpm:
@@ -153,6 +154,10 @@ func _physics_process(delta):
 		shift_timer = SHIFT_TIMEOUT
 	# 强制离合器暂时打滑，避免硬同步
 		clutch.locked = false
+	else:
+		if shift_timer<=0:
+			clutch.locked = true;
+	
 	last_gear = drivetrain.selected_gear
 
 # ... 原有的 torque_out 计算 ...
@@ -252,7 +257,12 @@ func engage(delta):
 	)
 	
 	if clutch.locked:
+		# 引擎侧反力 = -输入扭矩（引擎被加载）
 		reaction_torques.x = torque_out
+		# 变速箱侧扭矩 = 输入扭矩（传递动力）
+		reaction_torques.y = -torque_out
+	
+	
 	
 	drive_reaction_torque = reaction_torques.x * (1 - clutch_input)
 	clutch_reaction_torque = reaction_torques.y * (1 - clutch_input)
@@ -263,12 +273,12 @@ func engage(delta):
 	speedo = avg_front_spin * wheel_fl.tire_radius * 3.6
 
 	# 【额外保护】限制引擎角加速度绝对值
-	const MAX_ANGULAR_ACCEL = 80.0   # rad/s²，约 764 RPM/s
-	var engine_accel = engine_net_torque / car_params.engine_moment
-	engine_accel = clamp(engine_accel, -MAX_ANGULAR_ACCEL, MAX_ANGULAR_ACCEL)
-	engine_angular_vel += engine_accel * delta
-	rpm = engine_angular_vel * AV_2_RPM
-	rpm = clamp(rpm, 0.0, car_params.max_engine_rpm * 1.05)   # 绝不超过红线5%
+	#const MAX_ANGULAR_ACCEL = 80.0   # rad/s²，约 764 RPM/s
+	#var engine_accel = engine_net_torque / car_params.engine_moment
+	#engine_accel = clamp(engine_accel, -MAX_ANGULAR_ACCEL, MAX_ANGULAR_ACCEL)
+	#engine_angular_vel += engine_accel * delta
+	#rpm = engine_angular_vel * AV_2_RPM
+	#rpm = clamp(rpm, 0.0, car_params.max_engine_rpm * 1.05)   # 绝不超过红线5%
 	
 	
 func engage_old(delta):
