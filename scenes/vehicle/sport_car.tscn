@@ -7,6 +7,8 @@
 [ext_resource type="Texture2D" uid="uid://xcvloq7plggh" path="res://models/sport_car_colorpalette8x8.png" id="7_cvq8b"]
 [ext_resource type="Texture2D" uid="uid://dgss6cqmoxc2d" path="res://car/car2b-trb1-int.png" id="7_gjp37"]
 
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_rd2im"]
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cw0ms"]
 resource_name = "CarBaseNaterial"
 cull_mode = 2
@@ -52,6 +54,14 @@ size = Vector3(1.8507, 0.745634, 4.50529)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_vdwmd"]
 size = Vector3(1.0198, 0.420914, 1.23744)
+
+[sub_resource type="TopologyDataMesh" id="TopologyDataMesh_rd2im"]
+
+[sub_resource type="Skin" id="Skin_rd2im"]
+bind_count = 1
+bind/0/name = &""
+bind/0/bone = -1
+bind/0/pose = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rd2im"]
 albedo_texture = ExtResource("6_gjp37")
@@ -238,6 +248,7 @@ albedo_texture = ExtResource("6_gjp37")
 
 [node name="RigidBodyCar" parent="." unique_id=1061171860 instance=ExtResource("1_rpk6a")]
 mass = 1000.0
+physics_material_override = SubResource("PhysicsMaterial_rd2im")
 car_params = ExtResource("2_npx5w")
 
 [node name="Camera3D" parent="RigidBodyCar" index="0" unique_id=1051552537]
@@ -281,9 +292,17 @@ shape = SubResource("5")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.332292, -0.174233)
 shape = SubResource("BoxShape3D_vdwmd")
 
-[node name="Car" type="MeshInstance3D" parent="RigidBodyCar" unique_id=1554540791]
-transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 0, -0.38315, -0.552728)
+[node name="SubdivMeshInstance3D" type="SubdivMeshInstance3D" parent="RigidBodyCar" unique_id=436183323]
+mesh = SubResource("TopologyDataMesh_rd2im")
+skin = SubResource("Skin_rd2im")
+skeleton_path = NodePath("../..")
+subdiv_level = 4
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+
+[node name="Car" type="MeshInstance3D" parent="RigidBodyCar/SubdivMeshInstance3D" unique_id=1554540791]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 0, 0.11684999, -0.552728)
 mesh = ExtResource("6_rd2im")
+skeleton = NodePath("../..")
 surface_material_override/0 = SubResource("StandardMaterial3D_rd2im")
 surface_material_override/1 = SubResource("StandardMaterial3D_wuawh")
 surface_material_override/2 = SubResource("StandardMaterial3D_gjp37")

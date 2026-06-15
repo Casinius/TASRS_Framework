@@ -122,13 +122,17 @@ func _physics_process(delta):
 	torque_out = get_engine_torque(rpm, throttle_input)
 	engine_net_torque = torque_out + clutch_reaction_torque
 
-	rpm += AV_2_RPM * delta * engine_net_torque / car_params.engine_moment
+	#rpm += AV_2_RPM * delta * engine_net_torque / car_params.engine_moment
 	
-	engine_angular_vel = rpm / AV_2_RPM
+	#engine_angular_vel = rpm / AV_2_RPM
+	# 正确的做法
+	engine_angular_vel += delta * engine_net_torque / car_params.engine_moment
+	rpm = engine_angular_vel * AV_2_RPM
 	
 	if rpm >= car_params.max_engine_rpm:
 		torque_out = 0
-		rpm -= 500 
+		rpm = car_params.max_engine_rpm*car_params.torque_curve.sample_baked(rpm/car_params.max_engine_rpm - 0.2)
+		#rpm -= 500 
 	
 #	if rpm <= car_params.rpm_idle + 10 and abs(z_vel) < 10 and throttle_input <= 0.05:
 #		clutch_input = 1.0

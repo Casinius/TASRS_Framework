@@ -42,7 +42,7 @@ var prev_pos: Vector3 = Vector3.ZERO
 var spring_curr_length: float = spring_length
 
 @onready var car = $'..' #Get the parent node as car
-@onready var wheelmesh = $MeshInstance3D
+@export var wheelmesh:Node3D;
 
 var max_extension_force:float=spring_stiffness * (spring_length * 1000);
 
@@ -69,6 +69,20 @@ func set_params(params: WheelSuspensionParameters):
 
 # Move back to physics process when physics interpolation comes to godot4
 func _process(delta: float) -> void:
+	
+	var spin_treshold := 10.0
+	var ambient_temp := 20.0
+	
+	# 【新增】瞬态滑移模型
+	var raw_slip := slip_vec
+	if tire_model is TransientPacejkaTireModel:
+		slip_vec = tire_model.update_transient_slip(raw_slip, abs(z_vel), delta)
+	
+	if abs(spin) > spin_treshold or abs(z_vel) > 1.0:
+		tire_wear = tire_model.update_tire_wear(delta, slip_vec, y_force, surface_mu)
+	if is_colliding() && y_force > 0:
+		tire_model.update_tire_temp(slip_vec, y_force, local_vel.length(), surface_mu, ambient_temp, delta)
+	
 	wheelmesh.rotate_x(wrapf(-spin * delta,0, TAU))
 	wheelmesh.position.y = -spring_curr_length
 
@@ -142,7 +156,20 @@ func apply_forces(opposite_comp, delta):
 	y_force = clamp(y_force, 0, max_extension_force);
 	
 	############### Slip #######################
-	slip_vec.x = asin(clamp(-planar_vect.x, -1, 1)) # X slip is lateral slip
+	
+	
+		# 替换原来的 slip_vec.x 计算
+	var min_speed_for_slip = 1.5  # m/s，低于此速度用变形模型近似
+
+	if abs(z_vel) > min_speed_for_slip:
+		# 标准 SAE 定义：atan2(Vy, |Vx|)，更准确
+		slip_vec.x = atan2(-local_vel.x, abs(z_vel))
+	else:
+		# 低速时用轮胎变形近似：侧向速度 / 侧向刚度特征速度
+		# 避免 90° 爆炸，同时保留微小恢复力
+		var characteristic_speed = 5.0  # m/s，经验值
+		slip_vec.x = clampf(-local_vel.x / characteristic_speed, -0.5, 0.5)
+	#slip_vec.x = asin(clamp(-planar_vect.x, -1, 1)) # X slip is lateral slip
 	slip_vec.y = 0.0 # Y slip is the longitudinal Z slip
 	
 	if is_colliding():
@@ -169,7 +196,9 @@ func apply_forces(opposite_comp, delta):
 			car.apply_torque(Vector3(0, force_vec.z * 0.5, 0))
 		return spring_load_mm
 	else:
-		spin -= sign(spin) * delta * 2 / wheel_inertia # stop undriven wheels from spinning endlessly
+		#spin -= sign(spin) * delta * 2 / wheel_inertia # stop undriven wheels from spinning endlessly
+		var damping_torque = 2.0
+		spin -= sign(spin) * delta * damping_torque / wheel_inertia 
 		return 0.0
 
 
@@ -180,7 +209,8 @@ func apply_torque(drive_torque, brake_torque, drive_inertia, delta):
 	if abs(spin) < 5 and brake_torque > abs(net_torque):
 		spin = 0
 	else:
-		net_torque -= (brake_torque + rolling_resistance) * sign(spin)
+		#net_torque -= (brake_torque + rolling_resistance) * sign(spin)
+		net_torque -= (brake_torque + rolling_resistance * tire_radius) * sign(spin)
 		spin += delta * net_torque / (wheel_inertia + drive_inertia)
 
 	if drive_torque * delta == 0:

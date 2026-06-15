@@ -34,10 +34,14 @@ func _physics_process(delta):
 	var safe_speed :float= abs(node.speedo)
 	
 	# === AutoCenterForce（物理回正力）===
-	var align_torque_fl :float= node.wheel_fl.slip_vec.x * node.wheel_fl.y_force * ethta_car_body
-	var align_torque_fr :float= node.wheel_fr.slip_vec.x * node.wheel_fr.y_force * ethta_car_body
+	const trail_length := 0.05;
+	var align_torque_fl :float= node.wheel_fl.force_vec.x * trail_length  # trail_length 需定义
+	var align_torque_fr :float= node.wheel_fr.force_vec.x * trail_length
+	var TqAlign :float= align_torque_fl + align_torque_fr
+	
 	var rear_fy :float= node.wheel_bl.force_vec.x + node.wheel_br.force_vec.x
-	var TqAlign := align_torque_fl + align_torque_fr
+	
+	#var TqAlign := align_torque_fl + align_torque_fr
 	
 	var SoftenFactor := 450.0
 	var AutoCenterForce: float = TqAlign * SoftenFactor / (abs(TqAlign) + SoftenFactor)
@@ -54,9 +58,9 @@ func _physics_process(delta):
 		
 		if abs(steer_delta) > 0.002:  # 死区
 			var target :float= sign(steer_delta) * 7.0
-			low_speed_dir = move_toward(low_speed_dir, target, lowspeed_ramp_speed)
+			low_speed_dir = move_toward(low_speed_dir, target, lowspeed_ramp_speed * delta)
 		else:
-			low_speed_dir = move_toward(low_speed_dir, 0.0, lowspeed_ramp_speed * 0.5)
+			low_speed_dir = move_toward(low_speed_dir, 0.0, lowspeed_ramp_speed * 0.5*delta)
 		
 		low_speed_dir = clamp(low_speed_dir, -7.0, 7.0)
 		
@@ -86,13 +90,6 @@ func _physics_process(delta):
 	# === 映射到设备：直接用 tanh，不要额外除法 ===
 	var normalized := tanh(total_force / max_autoforce)  # ∈ [-0.76, 0.76] @ ±1800
 	var device_force := normalized * 32765.0             # 直接映射，不用 remap
-	
-	
-	#var detect_collide :int = 300*node.susp_comp.max();
-	#var prev_collide := 0;
-	#if(detect_collide-prev_collide>10000):
-	#	update_effect_constforce(key_effect_const_susp,300*node.susp_comp.max(),tanh((node.wheel_fl.y_force-node.wheel_fr.y_force)/1800));
-	#prev_collide = detect_collide;
 	
 	update_effect_constforce(key_effect_const,int(device_force),1);
 	#print(300*node.susp_comp.max());

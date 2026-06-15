@@ -76,7 +76,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 [application]
 
 config/name="Advanced Vehicle Demo"
-run/main_scene="uid://cpdnu8apqgcid"
+run/main_scene="uid://x5af4u1lm676"
 config/features=PackedStringArray("4.6")
 config/icon="res://icon.png"
 
@@ -95,6 +95,10 @@ window/subwindows/embed_subwindows=false
 [dotnet]
 
 project/assembly_name="Advanced Vehicle Demo"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/godot_subdiv/plugin.cfg")
 
 [importer_defaults]
 
@@ -153,7 +157,6 @@ Clutch={
 
 [input_devices]
 
-buffering/agile_event_flushing=true
 pointing/emulate_mouse_from_touch=false
 
 [layer_names]
