@@ -128,6 +128,7 @@ func _physics_process(delta):
 	if rpm >= car_params.max_engine_rpm:
 		torque_out = 0
 		rpm = car_params.max_engine_rpm*car_params.torque_curve.sample_baked(rpm/car_params.max_engine_rpm - 0.2)
+		#print(rpm)
 		#rpm -= 500 
 	
 #	if rpm <= car_params.rpm_idle + 10 and abs(z_vel) < 10 and throttle_input <= 0.05:
@@ -262,15 +263,23 @@ func engage(delta):
 	# 【删除】clutch_kick
 	# 【删除】reaction_torques Vector2
 	
-	# 单一离合器扭矩
-	var clutch_torque = clutch.get_clutch_torque(
-		engine_angular_vel, gearbox_shaft_speed, torque_out, clutch_input
-	)
+	if clutch.locked and drivetrain.selected_gear != 0:
+		# 硬锁止：直接把发动机角速度拽到和变速箱轴一致
+		engine_angular_vel = gearbox_shaft_speed
+		# 此时发动机扭矩全部传递下去，不受 320 限制
+		net_drive = torque_out 
+	else:
+		var clutch_torque = clutch.get_clutch_torque(
+			engine_angular_vel, gearbox_shaft_speed, torque_out, clutch_input
+		)
+		#print("离合器传递扭矩: ", clutch_torque)
+		# 引擎侧物理
+		var engine_net_torque = torque_out - clutch_torque
+		var engine_angular_accel = engine_net_torque / car_params.engine_moment
+		engine_angular_vel += engine_angular_accel * delta
+		# 驱动扭矩
+		net_drive = clutch_torque
 	
-	# 引擎侧物理
-	var engine_net_torque = torque_out - clutch_torque
-	var engine_angular_accel = engine_net_torque / car_params.engine_moment
-	engine_angular_vel += engine_angular_accel * delta
 	
 	# 红线软限制
 	var max_av = car_params.max_engine_rpm / AV_2_RPM
@@ -280,8 +289,7 @@ func engage(delta):
 	rpm = engine_angular_vel * AV_2_RPM
 	rpm = max(rpm, car_params.rpm_idle)
 	
-	# 驱动扭矩
-	net_drive = clutch_torque
+	
 	drivetrain.drivetrain(net_drive, rear_brake_torque, front_brake_torque,
 						[wheel_bl, wheel_br, wheel_fl, wheel_fr], clutch_input, delta)
 	

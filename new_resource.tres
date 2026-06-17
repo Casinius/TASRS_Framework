@@ -15,12 +15,13 @@ script = ExtResource("1_xonew")
 
 [sub_resource type="Resource" id="Resource_6073w"]
 script = ExtResource("1_xonew")
+diff_type = 1
 
 [sub_resource type="Resource" id="Resource_tq03h"]
 script = ExtResource("2_y3mkl")
-gear_ratios = [3.08, 2.455, 1.66, 1.175, 1.0]
+gear_ratios = [3.5, 3.0, 2.7, 1.5, 1.0]
+final_drive = 3.2
 reverse_ratio = 3.2
-gear_inertia = 0.2
 automatic = false
 rear_diff = SubResource("Resource_6073w")
 front_diff = SubResource("Resource_ftdu4")
@@ -32,8 +33,8 @@ _data = [Vector2(0, 0), 0.0, 2.36316, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
 point_count = 2
 
 [sub_resource type="Curve" id="Curve_t8jp4"]
-_data = [Vector2(0, 0.663636), 0.0, 0.0, 0, 0, Vector2(0.4, 0.945454), 0.414404, 0.414404, 0, 0, Vector2(0.6492537, 1), 0.0, 0.0, 0, 0, Vector2(0.9908815, 0.19733655), -7.951877, 0.0, 0, 0]
-point_count = 4
+_data = [Vector2(0, 0.663636), 0.0, 0.0, 0, 0, Vector2(0.4, 0.945454), 0.414404, 0.414404, 0, 0, Vector2(0.6492537, 1), 0.0, 0.0, 0, 0, Vector2(0.8484849, 0.99999994), 0.0, 0.0, 0, 0, Vector2(0.9917355, 0.4536637), -7.951877, 0.0, 0, 0]
+point_count = 5
 
 [sub_resource type="Resource" id="Resource_y3mkl"]
 script = ExtResource("6_y3mkl")
@@ -54,13 +55,12 @@ script = ExtResource("3_ihbpk")
 max_steer = 0.4
 max_brake_force = 100000.0
 max_handbrake_torque = 4000.0
-max_torque = 280.0
+max_torque = 400.0
 torque_curve = SubResource("Curve_t8jp4")
 throttle_model = SubResource("Curve_kdwlw")
 engine_brake = 300.0
 engine_moment = 0.14
 engine_sound = ExtResource("3_y3mkl")
-clutch_friction = 320.0
 drivetrain_params = SubResource("Resource_tq03h")
 wheel_params_fl = SubResource("Resource_1vovn")
 wheel_params_fr = SubResource("Resource_1vovn")

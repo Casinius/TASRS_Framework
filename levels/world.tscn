@@ -8,7 +8,6 @@
 [ext_resource type="Texture2D" uid="uid://br2iiyd111dkb" path="res://materials/nbr-curb-r_d.png" id="7_lmpr0"]
 [ext_resource type="Texture2D" uid="uid://50h4nanbd4tu" path="res://materials/nbr-curb-r_h.png" id="7_re8x6"]
 [ext_resource type="Script" uid="uid://detlcoduqekq4" path="res://levels/ffb_manager.gd" id="8_legw5"]
-[ext_resource type="Script" uid="uid://dcxp356dtbg48" path="res://scenes/camera.gd" id="9_687qm"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_otdr6"]
 frequency = 0.841
@@ -37,18 +36,20 @@ data = PackedVector3Array(-250, 0.5, 250, -240.196, 0.5, 250, -250, -0.5, 250, -
 albedo_texture = ExtResource("6_687qm")
 albedo_texture_force_srgb = true
 metallic = 1.0
+metallic_specular = 0.0
 metallic_texture = ExtResource("7_lmpr0")
 roughness_texture = ExtResource("7_lmpr0")
 normal_enabled = true
-normal_scale = 3.93
+normal_scale = -8.97
 normal_texture = ExtResource("7_lmpr0")
 bent_normal_enabled = true
 bent_normal_texture = ExtResource("7_re8x6")
+rim_enabled = true
+rim_tint = 0.0
+rim_texture = ExtResource("7_re8x6")
 heightmap_enabled = true
 heightmap_scale = 7.133
-heightmap_deep_parallax = true
-heightmap_min_layers = 8
-heightmap_max_layers = 32
+heightmap_flip_tangent = true
 heightmap_texture = ExtResource("7_re8x6")
 uv1_offset = Vector3(0, 0.1, 0)
 
@@ -117,11 +118,19 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 8.332268, 0)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5271056, -2.6927338, 1.4364802)
 physics_material_override = SubResource("PhysicsMaterial_i8ckm")
 
-[node name="Camera3D" parent="Sportcar/RigidBodyCar" index="0" unique_id=1051552537]
-transform = Transform3D(1, 0, 0, 0, 1, -1.74846e-07, 0, 1.74846e-07, 1, -0.38381743, 0.40236855, -0.95800364)
-script = ExtResource("9_687qm")
-follow_this_path = NodePath("..")
-target_distance = 10.0
+[node name="Camera3D" parent="Sportcar/RigidBodyCar" index="0" unique_id=1051552537 node_paths=PackedStringArray("vehicle")]
+transform = Transform3D(1, 0, 0, 0, 1, -1.74846e-07, 0, 1.74846e-07, 1, -0.38381743, 0.40236855, -0.84327245)
+vehicle = NodePath("..")
+base_fov = 90.0
+look_smoothness = 5.0
+pitch_angle_max = 2.5
+pitch_displacement = 0.05
+roll_angle_max = 3.0
+roll_displacement = 0.03
+fov_change_range = 3.0
+fov_reference_speed = 200.0
+bump_intensity = 0.02
+bump_frequency = 20.0
 
 [node name="Wheel_br" parent="Sportcar/RigidBodyCar" index="1" unique_id=341000035 node_paths=PackedStringArray("wheelmesh")]
 wheelmesh = NodePath("w")
