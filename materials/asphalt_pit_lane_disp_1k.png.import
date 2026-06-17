@@ -2,7 +2,7 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cj2b60afhfyr4"
+uid="uid://duvcyl8a5fqc1"
 path="res://.godot/imported/asphalt_pit_lane_disp_1k.png-bfd624c63c418ac312b9e3acf3c2e904.ctex"
 metadata={
 "vram_texture": false
@@ -37,4 +37,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=true
 process/size_limit=0
-detect_3d/compress_to=0
+detect_3d/compress_to=2

@@ -91,6 +91,7 @@ use_ambient=true
 [display]
 
 window/subwindows/embed_subwindows=false
+window/vsync/vsync_mode=2
 
 [dotnet]
 

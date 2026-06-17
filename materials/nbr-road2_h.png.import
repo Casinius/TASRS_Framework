@@ -2,7 +2,7 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://068f3cepw3x2"
+uid="uid://bev64xkpgkq2n"
 path="res://.godot/imported/nbr-road2_h.png-148e21b648bb3755aec01e339e45bca5.ctex"
 metadata={
 "vram_texture": false
@@ -21,12 +21,12 @@ compress/lossy_quality=0.7
 compress/uastc_level=2
 compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
-compress/normal_map=1
+compress/normal_map=0
 compress/channel_pack=0
 mipmaps/generate=true
 mipmaps/limit=-1
-roughness/mode=1
-roughness/src_normal="res://materials/nbr-road2_h.png"
+roughness/mode=0
+roughness/src_normal=""
 process/channel_remap/red=0
 process/channel_remap/green=1
 process/channel_remap/blue=2

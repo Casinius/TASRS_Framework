@@ -43,7 +43,7 @@ var spring_curr_length: float = spring_length
 
 @onready var car = $'..' #Get the parent node as car
 @export var wheelmesh:Node3D;
-
+@export var epsilon:float = 0.1;
 var max_extension_force:float=spring_stiffness * (spring_length * 1000);
 
 func _ready() -> void:
@@ -75,9 +75,7 @@ func _process(delta: float) -> void:
 	
 	# 【新增】瞬态滑移模型
 	var raw_slip := slip_vec
-	if tire_model is TransientPacejkaTireModel:
-		slip_vec = tire_model.update_transient_slip(raw_slip, abs(z_vel), delta)
-	
+
 	if abs(spin) > spin_treshold or abs(z_vel) > 1.0:
 		tire_wear = tire_model.update_tire_wear(delta, slip_vec, y_force, surface_mu)
 	if is_colliding() && y_force > 0:
@@ -105,6 +103,7 @@ var prev_spring_load_m: float = 0.0
 func apply_forces(opposite_comp, delta):
 	############# Local forward velocity #############
 	force_vec = Vector3.ZERO
+	slip_vec = Vector2.ZERO  # 或仅在碰撞时计算，非碰撞时置零
 	
 	local_vel = (global_transform.origin - prev_pos) / delta * global_transform.basis
 	z_vel = -local_vel.z
@@ -167,16 +166,19 @@ func apply_forces(opposite_comp, delta):
 	else:
 		# 低速时用轮胎变形近似：侧向速度 / 侧向刚度特征速度
 		# 避免 90° 爆炸，同时保留微小恢复力
-		var characteristic_speed = 5.0  # m/s，经验值
+		var characteristic_speed := 5.0  # m/s，经验值
 		slip_vec.x = clampf(-local_vel.x / characteristic_speed, -0.5, 0.5)
 	#slip_vec.x = asin(clamp(-planar_vect.x, -1, 1)) # X slip is lateral slip
 	slip_vec.y = 0.0 # Y slip is the longitudinal Z slip
 	
 	if is_colliding():
-		if not is_zero_approx(z_vel):
-			slip_vec.y = (z_vel - spin * tire_radius) / abs(z_vel)
-		else:
-			slip_vec.y = (z_vel - spin * tire_radius) / abs(z_vel + 0.0000001)
+		#SAE标准形式
+		var slip_ratio:float= (z_vel-tire_radius*spin) / max(abs(z_vel),epsilon);
+		slip_vec.y = clampf(slip_ratio,-1.0,1.0);
+		#if not is_zero_approx(z_vel):
+		#	slip_vec.y = (z_vel - spin * tire_radius) / sign(abs(z_vel))/clamp(abs(z_vel),1,abs(z_vel))
+		#else:
+		#	slip_vec.y = (z_vel - spin * tire_radius) / sign(abs(z_vel + 0.0000001))/clamp(abs(z_vel + 0.0000001),1,abs(z_vel + 0.0000001));
 	
 		if spring_load_mm !=0:
 			y_force += anti_roll * (spring_load_mm - opposite_comp)
