@@ -8,10 +8,10 @@ extends BaseTireModel
 @export var pacejka_e_lat := 0.0
 
 # 纵向（Longitudinal）参数
-@export var pacejka_b_long := 10.0
-@export var pacejka_c_long := 1.65
+@export var pacejka_b_long := 12.0
+@export var pacejka_c_long := 1.6
 @export var pacejka_d_long := 1.0
-@export var pacejka_e_long := 0.0
+@export var pacejka_e_long := 0.2
 
 # 回正力矩参数（简化）
 @export var aligning_moment_factor := 0.05   # 回正力矩系数

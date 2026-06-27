@@ -2,7 +2,9 @@ class_name BaseCar
 extends RigidBody3D
 @export var real_mesh_car:MeshInstance3D;
 @export var car_params := CarParameters.new()
-
+var rpm_pid: PIDController = null
+var idle_rpm: float = 800.0   # 怠速目标 (RPM)
+var redline_rpm: float = 7000.0
 ######## CONSTANTS ########
 const PETROL_KG_L: float = 0.7489
 const NM_2_KW: int = 9549
@@ -60,7 +62,7 @@ var shift_timer := 0.0
 const SHIFT_TORQUE_REDUCTION := 0.2
 const SHIFT_TIMEOUT := 0.2   # 秒
 
-
+var tmp_timer = 100;
 func _ready() -> void:
 
 	clutch.friction = car_params.clutch_friction
@@ -78,6 +80,14 @@ func _ready() -> void:
 	
 	fuel = car_params.fuel_tank_size * car_params.fuel_percentage * 0.01
 	self.mass += fuel * PETROL_KG_L
+	
+	rpm_pid = PIDController.new(0.05, 0.01, 0.001)   # 增益需调参
+	rpm_pid.integral_clamp = 50.0
+	rpm_pid.output_min = -100.0   # 最大负修正扭矩 (N·m)
+	rpm_pid.output_max = 100.0    # 最大正修正扭矩
+	audioplayer.max_engine_rpm = car_params.max_engine_rpm;
+	audioplayer.rpm_idle = car_params.rpm_idle;
+	
 	#self.inertia.y = self.mass*real_mesh_car.get_aabb().size.y*real_mesh_car.get_aabb().size.y;
 	#self.inertia.x = self.mass*real_mesh_car.get_aabb().size.x*real_mesh_car.get_aabb().size.x;
 	#self.inertia.z = self.mass*real_mesh_car.get_aabb().size.z*real_mesh_car.get_aabb().size.z;
@@ -87,11 +97,22 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ShiftDown"):
 		shift_down()
 
-
+func calc_gear_rpm(ratio:float)->float:
+	match car_params.drivetrain_params.drivetype:
+		CarParameters.DRIVE_TYPE.FWD:
+			return ratio* car_params.drivetrain_params.final_drive * avg_front_spin * AV_2_RPM
+		CarParameters.DRIVE_TYPE.RWD:
+			return ratio* car_params.drivetrain_params.final_drive * avg_rear_spin * AV_2_RPM
+		CarParameters.DRIVE_TYPE.AWD:
+			return ratio* car_params.drivetrain_params.final_drive * (avg_front_spin+avg_rear_spin)/2 * AV_2_RPM
+	return 0.0;
 func _physics_process(delta):
 	brake_input = Input.get_action_strength("Brake")
 	steering_input = Input.get_action_strength("SteerLeft") - Input.get_action_strength("SteerRight")
-	throttle_input = Input.get_action_strength("Throttle")
+	#if throttle_input-Input.get_action_raw_strength("Throttle") > 0.2:
+	#	print(throttle_input)
+	throttle_input = move_toward(throttle_input,Input.get_action_strength("Throttle"),0.3)
+	
 	handbrake_input = Input.get_action_strength("Handbrake")
 	clutch_input = Input.get_action_strength("Clutch")
 	
@@ -125,22 +146,20 @@ func _physics_process(delta):
 	#engine_angular_vel += delta * engine_net_torque / car_params.engine_moment
 	rpm = engine_angular_vel * AV_2_RPM
 	
-	if rpm >= car_params.max_engine_rpm:
-		torque_out = 0
-		rpm = car_params.max_engine_rpm*car_params.torque_curve.sample_baked(rpm/car_params.max_engine_rpm - 0.2)
-		#print(rpm)
-		#rpm -= 500 
-	
+	#if rpm >= car_params.max_engine_rpm:
+		#torque_out = 0
+		#rpm = car_params.max_engine_rpm*car_params.torque_curve.sample_baked(rpm/car_params.max_engine_rpm - 0.2)
+
 #	if rpm <= car_params.rpm_idle + 10 and abs(z_vel) < 10 and throttle_input <= 0.05:
 #		clutch_input = 1.0
 	
 	var next_gear_rpm = 0
 	if drivetrain.selected_gear < car_params.drivetrain_params.gear_ratios.size():
-		next_gear_rpm = car_params.drivetrain_params.gear_ratios[drivetrain.selected_gear] * car_params.drivetrain_params.final_drive * avg_front_spin * AV_2_RPM
+		next_gear_rpm = calc_gear_rpm(car_params.drivetrain_params.gear_ratios[drivetrain.selected_gear])
 
 	var prev_gear_rpm = 0
 	if drivetrain.selected_gear - 1 > 0:
-		prev_gear_rpm = car_params.drivetrain_params.gear_ratios[drivetrain.selected_gear - 1] * car_params.drivetrain_params.final_drive * avg_front_spin * AV_2_RPM
+		prev_gear_rpm = calc_gear_rpm(car_params.drivetrain_params.gear_ratios[drivetrain.selected_gear - 1])
 	
 	var next_gear_torque := get_engine_torque(next_gear_rpm, throttle_input)
 	var prev_gear_torque := get_engine_torque(prev_gear_rpm, throttle_input)
@@ -154,10 +173,10 @@ func _physics_process(delta):
 	if gear_changed:
 		shift_timer = SHIFT_TIMEOUT
 	# 强制离合器暂时打滑，避免硬同步
-		clutch.locked = false
-	else:
-		if shift_timer<=0:
-			clutch.locked = true;
+#		clutch.locked = false
+#	else:
+#		if shift_timer<=0:
+#			clutch.locked = true;
 	
 	last_gear = drivetrain.selected_gear
 
@@ -179,7 +198,7 @@ func _physics_process(delta):
 		rpm = 0.0
 		stop_engine_sound()
 	
-	play_engine_sound()
+	play_engine_sound(delta)
 	burn_fuel(delta)
 	
 	##### Anti-roll bar and applying forces #####
@@ -190,7 +209,14 @@ func _physics_process(delta):
 	susp_comp[1] = wheel_fl.apply_forces(prev_comp[0], delta)
 	
 	drag_force()
-
+	
+	#if tmp_timer!=0:
+	#	tmp_timer = tmp_timer-1;
+	#else:
+	#	tmp_timer = 100;
+	#if tmp_timer== 42:
+	#	print("档位:", drivetrain.selected_gear, " 传动比:", drivetrain.get_gearing(),
+	#s  " RPM:", rpm, " 轮速:", avg_rear_spin, " 车速:", z_vel)
 
 
 func get_engine_torque(p_rpm, p_throttle) -> float: 
@@ -225,13 +251,45 @@ func get_brake_torques(p_brake_input: float, delta):
 #	wheel_br.apply_torque(0.0, rear_brake_torque, 0.0, delta)
 #	avg_front_spin += (wheel_fl.spin + wheel_fr.spin) * 0.5
 #	speedo = avg_front_spin * wheel_fl.tire_radius * 3.6
-	
+
+
+
+func apply_rpm_governor(delta: float) -> float:
+	# 返回一个修正扭矩 (可正可负)，直接作用于引擎角加速度。
+	# 注意：此函数应仅调用一次，且与物理积分结合。
+	var target_rpm = car_params.rpm_idle   # 默认怠速
+
+	# 如果变速箱在档且离合器结合，允许转速随车速变化，此时只限制超速
+	if drivetrain.selected_gear != 0 and clutch_input < 0.5:
+		# 若转速低于怠速，则目标为怠速（防止熄火）
+		# 若转速高于红线，则目标为红线（限制超速）
+		if rpm < car_params.rpm_idle:
+			target_rpm = car_params.rpm_idle
+		elif rpm > car_params.max_engine_rpm * 0.98:
+			target_rpm = car_params.max_engine_rpm * 0.98
+		else:
+			# 正常行驶，不施加额外修正，让物理自然响应
+			return 0.0
+	else:
+		# 空档或离合器分离：维持怠速
+		target_rpm = car_params.rpm_idle
+
+	# 使用 PID 计算需要额外施加的扭矩 (模拟 ECU 调节)
+	var correction_torque = rpm_pid.update(target_rpm, rpm, delta)
+	# 但修正扭矩不应超过引擎最大扭矩的 20%，以免震荡
+	correction_torque = clampf(correction_torque, -car_params.max_torque*0.3, car_params.max_torque*0.3)
+	return correction_torque
 	
 func freewheel(delta):
-	# 空挡：引擎无负载
-	var engine_net_torque = torque_out
+	# 计算引擎净扭矩 = 输出扭矩 + PID 修正（ECU 控制）
+	var gov_torque = apply_rpm_governor(delta)
+	var engine_net_torque = torque_out + gov_torque
 	var engine_angular_accel = engine_net_torque / car_params.engine_moment
 	engine_angular_vel += engine_angular_accel * delta
+
+	# 然后限幅防止超速（保险）
+	var max_av = car_params.max_engine_rpm / AV_2_RPM
+	engine_angular_vel = clamp(engine_angular_vel, 0.0, max_av * 1.02)
 	rpm = engine_angular_vel * AV_2_RPM
 	rpm = max(rpm, car_params.rpm_idle)
 	
@@ -247,6 +305,7 @@ func freewheel(delta):
 	
 	
 func engage(delta):
+	apply_rpm_governor(delta)
 	avg_rear_spin = (wheel_bl.spin + wheel_br.spin) * 0.5
 	avg_front_spin = (wheel_fl.spin + wheel_fr.spin) * 0.5
 	
@@ -259,37 +318,26 @@ func engage(delta):
 		DriveTrainParameters.DRIVE_TYPE.AWD:
 			gearbox_shaft_speed = (avg_front_spin + avg_rear_spin) * 0.5 * drivetrain.get_gearing()
 	
-	# 【删除】MAX_SPEED_ERROR 截断
-	# 【删除】clutch_kick
-	# 【删除】reaction_torques Vector2
-	
-	if clutch.locked and drivetrain.selected_gear != 0:
-		# 硬锁止：直接把发动机角速度拽到和变速箱轴一致
-		engine_angular_vel = gearbox_shaft_speed
-		# 此时发动机扭矩全部传递下去，不受 320 限制
-		net_drive = torque_out 
-	else:
-		var clutch_torque = clutch.get_clutch_torque(
-			engine_angular_vel, gearbox_shaft_speed, torque_out, clutch_input
-		)
-		#print("离合器传递扭矩: ", clutch_torque)
-		# 引擎侧物理
-		var engine_net_torque = torque_out - clutch_torque
-		var engine_angular_accel = engine_net_torque / car_params.engine_moment
-		engine_angular_vel += engine_angular_accel * delta
-		# 驱动扭矩
-		net_drive = clutch_torque
-	
-	
-	# 红线软限制
+	var clutch_res = clutch.get_clutch_torque(engine_angular_vel, gearbox_shaft_speed, torque_out, clutch_input)
+	var clutch_torque = clutch_res[0]
+	var is_stuck = clutch_res[1]
+
+	# 引擎侧扭矩平衡：输出 + PID修正 - 离合器传递
+	var gov_torque = apply_rpm_governor(delta)
+	var engine_net_torque = torque_out + gov_torque - clutch_torque
+	engine_angular_vel += (engine_net_torque / car_params.engine_moment) * delta
+
+	# 黏滞同步：如果离合器黏滞，强制同步转速（但用柔和方式）
+	if is_stuck:
+		engine_angular_vel = lerp(engine_angular_vel, gearbox_shaft_speed, 0.9)  # 快速同步
+
+	# 保险限幅
 	var max_av = car_params.max_engine_rpm / AV_2_RPM
-	if engine_angular_vel > max_av:
-		engine_angular_vel = lerp(engine_angular_vel, max_av, 0.1)
-	
+	engine_angular_vel = clamp(engine_angular_vel, 0.0, max_av * 1.02)
+
 	rpm = engine_angular_vel * AV_2_RPM
 	rpm = max(rpm, car_params.rpm_idle)
-	
-	
+	net_drive = clutch_torque
 	drivetrain.drivetrain(net_drive, rear_brake_torque, front_brake_torque,
 						[wheel_bl, wheel_br, wheel_fl, wheel_fr], clutch_input, delta)
 	
@@ -361,17 +409,10 @@ func shift_down():
 	drivetrain.shift_down()
 
 
-func play_engine_sound():
-	var pitch_scaler = rpm / 4000
-	if rpm >= car_params.rpm_idle and rpm < car_params.max_engine_rpm:
-		if audioplayer.stream != car_params.engine_sound:
-			audioplayer.set_stream(car_params.engine_sound)
-		if !audioplayer.playing:
-			audioplayer.play()
+func play_engine_sound(delta:float):
 	
-	if pitch_scaler > 0.1:
-		audioplayer.pitch_scale = pitch_scaler
+	audioplayer.update_engine_sound(delta,rpm)
 
 func stop_engine_sound():
 	
-	audioplayer.stop()
+	audioplayer.stop_engine();

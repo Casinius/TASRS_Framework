@@ -77,7 +77,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 config/name="Advanced Vehicle Demo"
 run/main_scene="uid://x5af4u1lm676"
-config/features=PackedStringArray("4.6")
+config/features=PackedStringArray("4.7")
 config/icon="res://icon.png"
 
 [blazium]
@@ -99,7 +99,7 @@ project/assembly_name="Advanced Vehicle Demo"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/godot_subdiv/plugin.cfg")
+enabled=PackedStringArray("res://addons/PlantGenerator/plugin.cfg", "res://addons/godot_subdiv/plugin.cfg", "res://addons/sky_3d/plugin.cfg")
 
 [importer_defaults]
 
@@ -117,12 +117,12 @@ texture={
 
 ShiftUp={
 "deadzone": 0.5,
-"events": [Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"button_index":4,"pressure":0.0,"pressed":true,"script":null)
+"events": [Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"button_index":21,"pressure":0.0,"pressed":true,"script":null)
 ]
 }
 ShiftDown={
 "deadzone": 0.5,
-"events": [Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"button_index":5,"pressure":0.0,"pressed":true,"script":null)
+"events": [Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"button_index":22,"pressure":0.0,"pressed":true,"script":null)
 ]
 }
 Throttle={
@@ -182,8 +182,6 @@ common/physics_fps=240
 
 textures/canvas_textures/default_texture_filter=2
 rendering_device/fallback_to_opengl3=false
-renderer/rendering_method="mobile"
 renderer/rendering_method.web="forward_plus"
 anti_aliasing/quality/msaa_3d=1
-environment/defaults/default_environment="res://default_env.tres"
 threads/thread_model=2

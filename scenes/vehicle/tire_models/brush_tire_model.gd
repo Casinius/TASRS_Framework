@@ -5,11 +5,11 @@ extends BaseTireModel
 
 # ----- 侧向（Lateral）特性 -----
 @export var Fy_peak_slip := 0.09       # 侧向峰值侧偏角 [rad] (典型 0.08~0.12)
-@export var Fy_shape := 2.5           # 侧向曲线形状因子（越大越尖锐）
+@export var Fy_shape := 2.2           # 侧向曲线形状因子（越大越尖锐）
 
 # ----- 纵向（Longitudinal）特性 -----
-@export var Fx_peak_slip := 0.08      # 纵向峰值滑移率 (典型 0.08~0.15)
-@export var Fx_shape := 2.0            # 纵向曲线形状因子
+@export var Fx_peak_slip := 0.2      # 纵向峰值滑移率 (典型 0.08~0.15)
+@export var Fx_shape := 1.5            # 纵向曲线形状因子
 
 # ----- 载荷敏感性 -----
 @export var peak_slip_load_exp := -0.2  # 峰值滑移率随载荷变化指数（负值：重载峰值降低）
@@ -18,16 +18,16 @@ extends BaseTireModel
 # ----- 回正力矩参数 -----
 @export var pneumatic_trail_max := 0.04 # 最大气动力拖距 [m]
 @export var trail_load_exp := 0.5       # 拖距随载荷变化指数
-@export var Mz_saturation_slip := 0.15  # 回正力矩开始饱和的侧偏角 [rad]
+#@export var Mz_saturation_slip := 0.15  # 回正力矩开始饱和的侧偏角 [rad]
 
 # ----- 联合滑移参数 -----
-@export var combined_slip_shape := 1.0  # 联合滑移曲线形状（1.0 = 标准椭圆）
-
+#@export var combined_slip_shape := 1.0  # 联合滑移曲线形状（1.0 = 标准椭圆）
+@export var force_curve_shape_div_factor := 9.2;
 # ----- 兼容性参数（从你的 Pacejka 模型继承）-----
-@export var base_stiffness := 2500000.0
-@export var contact_patch := 0.22
-@export var long_stiffness_factor := 13.0
-@export var force_curve_shape_div_factor := 7.8;
+#@export var base_stiffness := 2500000.0
+#@export var contact_patch := 0.22
+#@export var long_stiffness_factor := 13.0
+
 # ==================== 核心曲线函数 ====================
 
 # TMeasy S 曲线：归一化力 = f(归一化滑移)

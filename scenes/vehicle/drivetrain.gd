@@ -101,86 +101,93 @@ func sign_of(value:float):
 	else:
 		return -1;
 
-func differential(torque: float, brake_torque, wheels, diff: DiffParameters, delta: float):
-	var diff_state = DIFF_STATE.LOCKED
-	
-	var tr1 = wheels[0].get_reaction_torque()
-	var tr2 = wheels[1].get_reaction_torque()
-	
-	var delta_torque := 0.0
-	var bias := 0.0
-	
-	if tr1 >= tr2:
-		bias = tr1 / max(tr2,0.001)
-	else:
-		bias = tr2 / max(tr1,0.001)
-	
-	delta_torque = tr1 - tr2
-	var t1 := torque * 0.5
-	var t2 := torque * 0.5
-	
-	var ratio = diff.power_ratio
-	if torque * sign(get_gearing()) < 0:
-		ratio = diff.coast_ratio
-	
-	if diff.diff_type == DIFF_TYPE.OPEN_DIFF:
-		diff_state = DIFF_STATE.OPEN
-	elif diff.diff_type == DIFF_TYPE.LOCKED:
-		diff_state = DIFF_STATE.LOCKED
-	else: # Limited Slip Differential
-		if abs(delta_torque) > diff.diff_preload and bias >= ratio:
-			diff_state = DIFF_STATE.SLIPPING
-	
-	match diff_state:
-		DIFF_STATE.OPEN:
-			var w0 = wheels[0]
-			var w1 = wheels[1]
-			var spin0 = w0.get_spin()
-			var spin1 = w1.get_spin()
-			
-			var spin_diff :float= spin0 - spin1
-			var diff_stiffness := 0.1
-			var base_t := torque * 0.5
-			var correction := diff_stiffness * spin_diff * drive_inertia / delta
-			correction = clampf(correction, -abs(torque) * 0.3, abs(torque) * 0.3)
-			
-			var tx0 :float= base_t - correction
-			var tx1 :float= base_t + correction
-			
-			# 正确：只传4个参数
-			w0.apply_torque(tx0, brake_torque * 0.5, drive_inertia, delta)
-			w1.apply_torque(tx1, brake_torque * 0.5, drive_inertia, delta)
-			
-			var target_split := 0.5
-			if abs(spin_diff) > 0.1:
-				target_split = 0.5 - 0.1 * sign(spin_diff)
-			_diff_split = lerp(_diff_split, target_split, 0.1)
-		
-		DIFF_STATE.SLIPPING:
-			_diff_clutch.friction = diff.diff_preload
-			var diff_torques = _diff_clutch.get_reaction_torques(wheels[0].get_spin(), wheels[1].get_spin(), tr1, tr2, diff.diff_preload * ratio, 0.0)
-			t1 += diff_torques.x
-			t2 += diff_torques.y
-			# 正确：只传4个参数
-			wheels[0].apply_torque(t1, brake_torque * 0.5, drive_inertia, delta)
-			wheels[1].apply_torque(t2, brake_torque * 0.5, drive_inertia, delta)
-		
-		DIFF_STATE.LOCKED:
-			var w0 = wheels[0]
-			var w1 = wheels[1]
-			var spin0 = w0.get_spin()
-			var spin1 = w1.get_spin()
-			var diff_speed = spin0 - spin1
-			
-			var axial_lock_stiffness := 200.0
-			var correction = clamp(diff_speed * axial_lock_stiffness, -1500.0, 1500.0)
-			
-			var tx0 :float= torque * 0.5 - correction
-			var tx1 :float= torque * 0.5 + correction
-			
-			# 正确：只传4个参数（没有多余的 true/false）
-			w0.apply_torque(tx0, brake_torque * 0.5, drive_inertia, delta)
-			w1.apply_torque(tx1, brake_torque * 0.5, drive_inertia, delta)
+# 在 DriveTrain 类中，替换原有 differential 方法
+func differential(torque: float, brake_torque: float, wheels: Array, diff: DiffParameters, delta: float):
+	var w_left  = wheels[0]
+	var w_right = wheels[1]
+	var spin_L  = w_left.get_spin()
+	var spin_R  = w_right.get_spin()
+	var spin_diff = spin_L - spin_R
+	var abs_spin_diff = abs(spin_diff)
+
+	# 计算左右轮反应扭矩（地面阻力）
+	var react_L = w_left.get_reaction_torque()
+	var react_R = w_right.get_reaction_torque()
+
+	# 基础分配（开式差速器：各一半）
+	var base_T = torque * 0.5
+
+	# 根据差速器类型决定分配方式
+	match diff.diff_type:
+		DIFF_TYPE.OPEN_DIFF:
+			# 开式：平均分配，但允许内部摩擦（仅作为阻尼）
+			# 实际开式差速器允许轮速自由差异，不产生偏置。
+			# 为了数值稳定，加一点阻尼防止高频震荡。
+			var damping = 0.1 * (spin_L - spin_R) * drive_inertia / delta
+			damping = clampf(damping, -abs(torque)*0.1, abs(torque)*0.1)
+			var T_L = base_T - damping
+			var T_R = base_T + damping
+			w_left.apply_torque(T_L, brake_torque * 0.5, drive_inertia, delta)
+			w_right.apply_torque(T_R, brake_torque * 0.5, drive_inertia, delta)
+
+		DIFF_TYPE.LOCKED:
+			# 锁止：强制同速，用大刚度修正
+			var lock_stiffness = 2000.0
+			var correction = spin_diff * lock_stiffness * delta
+			correction = clampf(correction, -abs(torque)*0.5, abs(torque)*0.5)
+			var T_L = base_T - correction
+			var T_R = base_T + correction
+			w_left.apply_torque(T_L, brake_torque * 0.5, drive_inertia, delta)
+			w_right.apply_torque(T_R, brake_torque * 0.5, drive_inertia, delta)
+
+		DIFF_TYPE.LIMITED_SLIP:
+			# ---- 基于扭矩偏置比的 LSD ----
+			var max_TBR = diff.power_ratio   # 最大扭矩偏置比（例如 2.5）
+			# 负载转移：根据左右轮反应扭矩差决定偏置方向
+			var react_ratio = 1.0
+			if abs(react_L) > 0.01 and abs(react_R) > 0.01:
+				# 高附着力侧会提供更大的反应扭矩
+				var high_react = max(react_L, react_R)
+				var low_react = min(react_L, react_R)
+				react_ratio = high_react / max(low_react, 0.01)
+				react_ratio = clamp(react_ratio, 1.0, max_TBR)
+
+			# 转速差影响：快速打滑时增大偏置
+			var speed_factor = 1.0
+			if abs_spin_diff > 0.5:   # 转速差超过阈值
+				speed_factor = 1.0 + 0.5 * abs_spin_diff   # 线性增加
+				speed_factor = clamp(speed_factor, 1.0, max_TBR)
+
+			# 综合偏置比（取两者中较大者，但受上限）
+			var TBR = max(react_ratio, speed_factor)
+			TBR = clamp(TBR, 1.0, max_TBR)
+
+			# 确定哪一侧需要更多扭矩（低转速侧得更多）
+			var T_high
+			var T_low
+			if spin_L > spin_R:
+				# 右轮转速慢，应得到更多扭矩（右轮高）
+				T_high = base_T * TBR / (1.0 + TBR) * 2.0   # 使总和等于 torque
+				T_low = torque - T_high
+				# 但必须保证 T_high + T_low = torque
+				# 由于浮点误差，重新正规化
+				var total = T_high + T_low
+				if total != 0:
+					T_high = T_high / total * torque
+					T_low = T_low / total * torque
+				# 分配：右轮得高扭矩，左轮得低
+				w_left.apply_torque(T_low, brake_torque * 0.5, drive_inertia, delta)
+				w_right.apply_torque(T_high, brake_torque * 0.5, drive_inertia, delta)
+			else:
+				# 左轮转速慢，左轮得高扭矩
+				T_high = base_T * TBR / (1.0 + TBR) * 2.0
+				T_low = torque - T_high
+				var total = T_high + T_low
+				if total != 0:
+					T_high = T_high / total * torque
+					T_low = T_low / total * torque
+				w_left.apply_torque(T_high, brake_torque * 0.5, drive_inertia, delta)
+				w_right.apply_torque(T_low, brake_torque * 0.5, drive_inertia, delta)
 
 func drivetrain(torque: float, rear_brake_torque: float, front_brake_torque: float, wheels: Array, clutch_input: float, delta: float):
 	var rear_wheels = [wheels[0], wheels[1]]
@@ -190,7 +197,10 @@ func drivetrain(torque: float, rear_brake_torque: float, front_brake_torque: flo
 	avg_front_spin = (wheels[2].get_spin() + wheels[3].get_spin()) * 0.5 
 	
 	drive_inertia = (_engine_inertia + pow(abs(get_gearing()), 2) * drivetrain_params.gear_inertia) * (1 - clutch_input)
-	var drive_torque = torque * get_gearing()
+	
+	
+	
+	var drive_torque := torque * get_gearing()
 	
 	if drivetrain_params.drivetype == DRIVE_TYPE.RWD:
 		differential(drive_torque, rear_brake_torque, rear_wheels, drivetrain_params.rear_diff, delta)
@@ -214,41 +224,26 @@ func drivetrain(torque: float, rear_brake_torque: float, front_brake_torque: flo
 		match drivetrain_params.center_diff.diff_type:
 			DIFF_TYPE.LOCKED: # Locked center diff currently means raw 4x4 
 				var avg_spin = (avg_front_spin + avg_rear_spin) * 0.5
-				
-				var net_torque := 0.0
-				var combined_wheel_inertias := 0.0
-				var rolling_resistance := 0.0
-				
+				var lock_stiffness = 2000.0
+				var torque_per_wheel = drive_torque / 4.0
 				for w in wheels:
-					net_torque += w.get_reaction_torque()
-					combined_wheel_inertias += w.wheel_inertia
-					rolling_resistance += w.rolling_resistance
-					
-				net_torque += drive_torque
-				var brake_torque := rear_brake_torque + front_brake_torque
-				var spin := 0.0
-				
-				if abs(avg_spin) < 5.0 and brake_torque > abs(net_torque):
-					spin = 0.0
-				else:
-					net_torque -= (brake_torque + abs(rolling_resistance)) * sign(avg_spin)
-					spin = avg_spin + delta * net_torque / (drive_inertia + combined_wheel_inertias)
-				
-				wheels[0].set_spin(spin)
-				wheels[1].set_spin(spin)
-				wheels[2].set_spin(spin)
-				wheels[3].set_spin(spin)
+					var spin_diff = w.get_spin() - avg_spin
+					var lock_torque = spin_diff * lock_stiffness * delta
+					lock_torque = clampf(lock_torque, -torque_per_wheel, torque_per_wheel)
+					var T = torque_per_wheel - lock_torque
+					# 此处 brake_torque 需根据前后轴分开传，简单起见可用总制动扭矩/4
+					w.apply_torque(T, 0.0, drive_inertia/4, delta)
 			
 			DIFF_TYPE.LIMITED_SLIP:
-				var rear_drive = drive_torque * (1 - drivetrain_params.center_split_fr)
-				var front_drive = drive_torque * drivetrain_params.center_split_fr
+				var rear_drive := drive_torque * (1 - drivetrain_params.center_split_fr)
+				var front_drive := drive_torque * drivetrain_params.center_split_fr
 				
 				differential(rear_drive, rear_brake_torque, rear_wheels, drivetrain_params.rear_diff, delta)
 				differential(front_drive, front_brake_torque, front_wheels, drivetrain_params.front_diff, delta)
 			
 			DIFF_TYPE.OPEN_DIFF:
-				var rear_drive = drive_torque * 0.5
-				var front_drive = drive_torque * 0.5
+				var rear_drive := drive_torque * 0.5
+				var front_drive := drive_torque * 0.5
 				
 				differential(rear_drive, rear_brake_torque, rear_wheels, drivetrain_params.rear_diff, delta)
 				differential(front_drive, front_brake_torque, front_wheels, drivetrain_params.front_diff, delta)
