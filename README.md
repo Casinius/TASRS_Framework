@@ -39,3 +39,8 @@ This project also contains models and textures owned by their authors , they may
 * [Bastiaan Olij - Vehicle demo](https://github.com/BastiaanOlij/vehicle-demo/)
 * [Wolfe, written tutorial of his GDSim vehicle physics](https://www.gtplanet.net/forum/threads/gdsim-v0-4a-autocross-and-custom-setups.396400/)
 * [Racer.nl, Alot of great documentation about physics of racing sims](http://www.racer.nl/)
+
+
+## Future Outlook
+Move All the Computing Framework to C++ Implementation
+Adapt them into my own simu_gd Solver for substep support
