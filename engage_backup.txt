@@ -1,0 +1,54 @@
+func engage(delta):
+	avg_rear_spin = 0.0
+	avg_front_spin = 0.0
+	avg_rear_spin += (wheel_bl.spin + wheel_br.spin) * 0.5
+	avg_front_spin += (wheel_fl.spin + wheel_fr.spin) * 0.5
+
+	var gearbox_shaft_speed: float = 0.0
+	match car_params.drivetrain_params.drivetype:
+		DriveTrainParameters.DRIVE_TYPE.RWD:
+			gearbox_shaft_speed = avg_rear_spin * drivetrain.get_gearing()
+		DriveTrainParameters.DRIVE_TYPE.FWD:
+			gearbox_shaft_speed = avg_front_spin * drivetrain.get_gearing()
+		DriveTrainParameters.DRIVE_TYPE.AWD:
+			gearbox_shaft_speed = (avg_front_spin + avg_rear_spin) * 0.5 * drivetrain.get_gearing()
+
+	var speed_error = engine_angular_vel - gearbox_shaft_speed
+
+	# 【核心修复】限制最大允许的转速差，防止爆炸
+	const MAX_SPEED_ERROR = 25.0   # rad/s，约 238 RPM，根据车型微调
+	if abs(speed_error) > MAX_SPEED_ERROR:
+		speed_error = sign(speed_error) * MAX_SPEED_ERROR
+		# 强制离合器打滑，避免硬连接
+		clutch.locked = false
+
+	var clutch_kick = min(abs(speed_error) * 0.2, 100.0)  # 限幅
+	var tr := drivetrain.reaction_torque
+	var clutch_slip_torque := 0.8 * clutch.friction
+	var reaction_torques : Vector2 = clutch.get_reaction_torques(
+		engine_angular_vel, gearbox_shaft_speed, torque_out, tr, clutch_slip_torque, clutch_kick
+	)
+
+	#if clutch.locked:
+		# 引擎侧反力 = -输入扭矩（引擎被加载）
+	#	reaction_torques.x = torque_out
+		# 变速箱侧扭矩 = 输入扭矩（传递动力）
+	#	reaction_torques.y = -torque_out
+
+
+
+	drive_reaction_torque = reaction_torques.x * (1 - clutch_input)
+	clutch_reaction_torque = reaction_torques.y * (1 - clutch_input)
+
+	net_drive = drive_reaction_torque
+	drivetrain.drivetrain(net_drive, rear_brake_torque, front_brake_torque,
+						[wheel_bl, wheel_br, wheel_fl, wheel_fr], clutch_input, delta)
+	speedo = avg_front_spin * wheel_fl.tire_radius * 3.6
+
+	# 【额外保护】限制引擎角加速度绝对值
+	#const MAX_ANGULAR_ACCEL = 80.0   # rad/s²，约 764 RPM/s
+	#var engine_accel = engine_net_torque / car_params.engine_moment
+	#engine_accel = clamp(engine_accel, -MAX_ANGULAR_ACCEL, MAX_ANGULAR_ACCEL)
+	#engine_angular_vel += engine_accel * delta
+	#rpm = engine_angular_vel * AV_2_RPM
+	#rpm = clamp(rpm, 0.0, car_params.max_engine_rpm * 1.05)   # 绝不超过红线5%

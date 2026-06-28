@@ -1,0 +1,15 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://cdh4ca5uahcx0"]
+
+[ext_resource type="Shader" uid="uid://cgl8vd24jykxr" path="res://levels/road.gdshader" id="1_yb53s"]
+[ext_resource type="Texture2D" uid="uid://ba575nnavg35y" path="res://levels/tex.tres" id="2_31cs7"]
+[ext_resource type="Texture2D" uid="uid://bqd0ned24ppol" path="res://levels/texh.tres" id="3_yb53s"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_yb53s")
+shader_parameter/albedo_texture = ExtResource("2_31cs7")
+shader_parameter/normal_texture = ExtResource("3_yb53s")
+shader_parameter/tile_size = 5.0
+shader_parameter/rotation_strength = 0.778000036955
+shader_parameter/offset_strength = 0.0
+shader_parameter/seed_offset = 15.0000007125

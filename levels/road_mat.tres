@@ -1,0 +1,15 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://cgljva5akgxi6"]
+
+[ext_resource type="Shader" uid="uid://cgl8vd24jykxr" path="res://levels/road.gdshader" id="1_qsa6y"]
+[ext_resource type="Texture2D" uid="uid://bb37p5umeleif" path="res://materials/asphalt_pit_lane_diff_1k.jpg" id="2_fycb5"]
+[ext_resource type="Texture2D" uid="uid://blavxm32aav7s" path="res://materials/nbr-road2_d.png" id="3_7l1x8"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_qsa6y")
+shader_parameter/albedo_texture = ExtResource("2_fycb5")
+shader_parameter/normal_texture = ExtResource("3_7l1x8")
+shader_parameter/tile_size = 5.0
+shader_parameter/rotation_strength = 0.0
+shader_parameter/offset_strength = 0.0570000027075
+shader_parameter/seed_offset = 29.5600014041
