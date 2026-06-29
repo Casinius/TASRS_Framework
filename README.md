@@ -2,10 +2,14 @@
 A more advanced car controller for the Godot game engine.
 
 ## Description
-Custom rigidbody car controller with raycast suspension for the Godot game engine , fork frome Dechode. \n
-Refractor A lot of codebase of Dechode to enhance them into A new level, including advanced Engine model,and Linear Clutch Model(Karnopp), More stable spring-based Diff Model and more! \n
-Adding Advanced Tween based EngineSound! \n
-And also ForceFeedBackNode within My godot_sdl_haptic Plugin! \n
+Custom rigidbody car controller with raycast suspension for the Godot game engine , fork frome Dechode. 
+
+Refractor A lot of codebase of Dechode to enhance them into A new level, including advanced Engine model,and Linear Clutch Model(Karnopp), More stable spring-based Diff Model and more!
+
+Adding Advanced Tween based EngineSound!
+
+And also ForceFeedBackNode within My godot_sdl_haptic Plugin!
+
 
 This project will be a framework till I have time to add more preset , track and models for it;
 Features:
@@ -30,7 +34,8 @@ Wheels that compatible with SDL3:
 - 3 padel support
 
 ## License
-The project code is licensed under the GPL2 License - see the LICENSE.md file for details.  \n
+The project code is licensed under the GPL2 License - see the LICENSE.md file for details.
+
 This project also contains models and textures owned by their authors , they may not have Public Domain License , You shall ask SpeedDreams Developers and Modders because it was what I what to Replicate (at least before I can move the whole SpeedDreams codebase to A RHI).
 
 
